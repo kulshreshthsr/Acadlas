@@ -1,20 +1,432 @@
-
 @import "tailwindcss";
 
-:root {
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ------------------------------------------------------------------
+   Acadlas design tokens
+
+   Lifted verbatim from marketing/src/styles/global.css so the product and
+   the website are recognisably the same thing. Colours come from the brand
+   artwork: navy from the wordmark, lagoon teal, cobalt and marigold from the
+   network mark. One family (Archivo) carries all type; its width axis is the
+   expressive lever — expanded for display, normal for reading.
+
+   Only the tokens and primitives the product actually uses are carried over.
+   The website's hero/demo-specific styles stay in the website.
+   ------------------------------------------------------------------ */
+@theme {
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Navy. night is the hero sky; ink-800 is the wordmark colour. */
+  --color-night: #061830;
+  --color-ink-950: #071b35;
+  --color-ink-900: #0a2140;
+  --color-ink-800: #0e284a;
+  --color-ink-700: #17345a;
+  --color-ink-600: #2a4a75;
+  --color-ink-500: #45648f;
+
+  /* Lagoon teal from the mark. 300 is text-safe on navy, 600 on white. */
+  --color-lagoon-50: #e9f7f6;
+  --color-lagoon-100: #cdeeec;
+  --color-lagoon-200: #9fdedb;
+  --color-lagoon-300: #6fcfcc;
+  --color-lagoon-400: #2fb4b2;
+  --color-lagoon-500: #14989b;
+  --color-lagoon-600: #0c7579;
+  --color-lagoon-700: #0a5c60;
+
+  /* Cobalt from the mark. Carries focus. */
+  --color-cobalt-100: #dbe9f6;
+  --color-cobalt-300: #8dbbe6;
+  --color-cobalt-400: #4e93d2;
+  --color-cobalt-500: #1f6fb2;
+  --color-cobalt-600: #175a92;
+
+  /* Marigold from the mark: the "live" colour, and the primary action. */
+  --color-marigold-50: #fff6e5;
+  --color-marigold-100: #ffeac2;
+  --color-marigold-300: #ffd27a;
+  --color-marigold-400: #f8bb4c;
+  --color-marigold-500: #f4a62a;
+  --color-marigold-600: #d98a0c;
+  --color-marigold-700: #8f5600;
+
+  /* Coral carries anything wrong or absent. */
+  --color-coral-50: #fef3f1;
+  --color-coral-100: #fde3df;
+  --color-coral-500: #e2574c;
+  --color-coral-700: #a8322a;
+
+  /* Cool neutrals tuned to the navy. Body text on light surfaces is slate-600 or darker. */
+  --color-paper: #f3f6f9;
+  --color-slate-50: #f7f9fb;
+  --color-slate-100: #eef2f7;
+  --color-slate-200: #dfe6ef;
+  --color-slate-300: #c8d3e1;
+  --color-slate-400: #9aaabf;
+  --color-slate-500: #6b7d95;
+  --color-slate-600: #4a5c75;
+  --color-slate-700: #364760;
+
+  /* Radius by hierarchy: xl for windows, lg for panels, md for controls, sm for chips. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --shadow-soft: 0 1px 2px rgb(14 40 74 / 0.06);
+  --shadow-lift: 0 1px 0 rgb(14 40 74 / 0.04), 0 18px 40px -22px rgb(14 40 74 / 0.45);
+  --shadow-frame: 0 1px 0 rgb(14 40 74 / 0.04), 0 40px 80px -36px rgb(6 24 48 / 0.55), 0 10px 24px -14px rgb(6 24 48 / 0.25);
+
+  --text-h2: clamp(1.9rem, 1.3rem + 1.9vw, 2.75rem);
+  --text-h2--line-height: 1.04;
+  --text-h2--letter-spacing: -0.035em;
+  --text-lead: clamp(1rem, 0.97rem + 0.2vw, 1.125rem);
+  --text-lead--line-height: 1.6;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-* {
-  box-sizing: border-box;
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--color-paper);
+    color: var(--color-slate-600);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-stretch: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Headings run expanded and heavy; width, not colour, carries the hierarchy. */
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink-800);
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: var(--text-h2);
+    line-height: var(--text-h2--line-height);
+    letter-spacing: var(--text-h2--letter-spacing);
+    font-weight: 760;
+    font-stretch: 122%;
+  }
+
+  h2 {
+    font-size: 1.375rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-stretch: 115%;
+  }
+
+  h3 {
+    font-size: 1.0625rem;
+    line-height: 1.3;
+    font-weight: 680;
+    font-stretch: 112%;
+    letter-spacing: -0.015em;
+  }
+
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--color-marigold-300);
+    color: var(--color-ink-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cobalt-500);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  [data-surface="dark"] {
+    color: var(--color-slate-300);
+  }
+
+  [data-surface="dark"] :where(h1, h2, h3) {
+    color: var(--color-white);
+  }
+
+  [data-surface="dark"] :focus-visible {
+    outline-color: var(--color-marigold-400);
+  }
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+@layer components {
+  .lead {
+    font-size: var(--text-lead);
+    line-height: var(--text-lead--line-height);
+  }
+
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3.25rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 650;
+    font-stretch: 110%;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.3s ease,
+      transform 0.3s var(--ease-out-soft);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* Primary action. Marigold is the brand's "live" colour, so it marks the one
+     thing the person came to this screen to do — never two buttons at once. */
+  .btn-sun {
+    background: var(--color-marigold-500);
+    color: var(--color-night);
+    box-shadow: 0 10px 30px -12px rgb(244 166 42 / 0.75);
+  }
+
+  .btn-sun:hover:not(:disabled) {
+    background: var(--color-marigold-400);
+    box-shadow: 0 14px 36px -12px rgb(244 166 42 / 0.9);
+  }
+
+  .btn-ink {
+    background: var(--color-ink-800);
+    color: var(--color-white);
+  }
+
+  .btn-ink:hover:not(:disabled) {
+    background: var(--color-ink-700);
+    box-shadow: 0 12px 26px -14px rgb(14 40 74 / 0.7);
+  }
+
+  .btn-line {
+    border-color: var(--color-slate-300);
+    color: var(--color-ink-800);
+    background: var(--color-white);
+  }
+
+  .btn-line:hover:not(:disabled) {
+    border-color: var(--color-ink-800);
+  }
+
+  /* Text-weight action for things that undo or step back. */
+  .btn-quiet {
+    min-height: 2.5rem;
+    padding-inline: 0.75rem;
+    background: transparent;
+    color: var(--color-slate-600);
+    font-size: 0.9375rem;
+  }
+
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--color-ink-800);
+    background: var(--color-slate-100);
+  }
+
+  /* Form controls. Error state is driven by aria-invalid, so the attribute that
+     tells a screen reader the field is wrong is the same one that colours it —
+     they cannot drift apart. */
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.75rem 0.95rem;
+    border: 1px solid var(--color-slate-300);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-ink-800);
+    font: inherit;
+    font-weight: 520;
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      background-color 0.18s ease;
+  }
+
+  .input::placeholder {
+    color: var(--color-slate-400);
+    font-weight: 450;
+  }
+
+  .input:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-slate-400);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--color-cobalt-500);
+    box-shadow: 0 0 0 3px rgb(31 111 178 / 0.18);
+  }
+
+  .input:disabled {
+    background: var(--color-slate-50);
+    color: var(--color-slate-500);
+    cursor: not-allowed;
+  }
+
+  .input[aria-invalid="true"] {
+    border-color: var(--color-coral-500);
+  }
+
+  .input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px rgb(226 87 76 / 0.18);
+  }
+
+  .input-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--color-slate-700);
+    font-size: 0.9375rem;
+    font-weight: 620;
+    font-stretch: 106%;
+  }
+
+  .input-hint {
+    margin-top: 0.4rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-slate-500);
+  }
+
+  .input-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    font-weight: 560;
+    color: var(--color-coral-700);
+  }
+
+  /* Panels and windows: radius signals hierarchy, not decoration. */
+  .panel {
+    border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    font-weight: 620;
+    font-stretch: 106%;
+    line-height: 1.4;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Motion
+
+   One orchestrated moment per screen: the stage draws its connections once,
+   on arrival. Everything else moves only in answer to something the person
+   did. Nothing moves at all if they have asked for less motion.
+   ------------------------------------------------------------------ */
+@keyframes stage-draw {
+  from {
+    stroke-dashoffset: var(--len, 200);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes stage-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage-link {
+    stroke-dasharray: var(--len, 200);
+    animation: stage-draw 1.1s var(--ease-out-soft) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .stage-node {
+    animation: stage-pop 0.5s var(--ease-spring) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .rise {
+    animation: rise 0.5s var(--ease-out-soft) both;
+    animation-delay: var(--d, 0ms);
+  }
 }
