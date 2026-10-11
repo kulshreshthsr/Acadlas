@@ -1,0 +1,152 @@
+---
+import { Image } from 'astro:assets';
+import wordmark from '../assets/brand/acadlas-wordmark-light.png';
+import Icon from './Icon.astro';
+import { navLinks } from '../data/site';
+---
+
+<!-- A floating navy capsule. It sits on the dark hero and the light sections alike,
+     and tightens once the visitor starts scrolling. -->
+<header class="pointer-events-none fixed inset-x-0 top-0 z-50 pt-3 sm:pt-4" data-header>
+  <div class="wrap">
+    <div
+      class="pointer-events-auto relative flex min-h-14 items-center justify-between gap-4 rounded-full border border-white/10 bg-night/70 py-1.5 pl-5 pr-1.5 shadow-[0_20px_50px_-24px_rgb(0_0_0/0.6)] backdrop-blur-xl transition-[background-color,box-shadow] duration-500 data-[scrolled=true]:bg-night/90"
+      data-header-bar
+    >
+      <a href="#top" aria-label="Acadlas, back to top" class="inline-flex min-h-11 shrink-0 items-center rounded-sm">
+        <Image
+          src={wordmark}
+          alt="Acadlas"
+          width={120}
+          height={25}
+          format="png"
+          densities={[1.5, 2]}
+          loading="eager"
+          fetchpriority="high"
+          class="h-6 w-auto"
+        />
+      </a>
+
+      <nav id="primary-nav" aria-label="Primary" data-open="false" class="hidden lg:block">
+        <ul class="flex items-center gap-0.5">
+          {
+            navLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  data-nav-link
+                  class="relative inline-flex min-h-11 items-center rounded-full px-4 text-[0.9375rem] font-medium text-slate-300 transition-colors [font-stretch:108%] hover:text-white aria-[current=true]:bg-white/10 aria-[current=true]:text-white"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <div class="flex items-center gap-1.5">
+        <a href="#try" class="btn btn-sun hidden min-h-11 px-5 text-[0.9375rem] sm:inline-flex">Try the demo</a>
+
+        <!-- Hidden unless JavaScript can run the toggle; without it the desktop links simply show. -->
+        <button
+          type="button"
+          class="group hidden size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/15 js:max-lg:inline-flex"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
+          aria-label="Open menu"
+          data-menu-button
+        >
+          <Icon name="menu" size={20} class="group-aria-expanded:hidden" />
+          <Icon name="close" size={20} class="hidden group-aria-expanded:block" />
+        </button>
+      </div>
+
+      <div
+        id="mobile-nav"
+        data-open="false"
+        class="absolute inset-x-0 top-[calc(100%+0.5rem)] hidden rounded-[1.5rem] border border-white/10 bg-night/95 p-3 shadow-[0_30px_60px_-24px_rgb(0_0_0/0.7)] backdrop-blur-xl data-[open=true]:block motion-safe:data-[open=true]:animate-pop lg:!hidden"
+      >
+        <ul class="flex flex-col">
+          {
+            navLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="flex min-h-13 items-center rounded-2xl px-4 text-lg font-semibold text-white [font-stretch:112%] hover:bg-white/5"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+        <a href="#try" class="btn btn-sun mt-2 w-full sm:hidden">Try the demo</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-header-bar]');
+  const button = document.querySelector<HTMLButtonElement>('[data-menu-button]');
+  const panel = document.getElementById('mobile-nav');
+
+  // Tighten the capsule once the page has moved.
+  const onScroll = () => {
+    if (bar) bar.dataset.scrolled = String(window.scrollY > 24);
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Mark the link for the section currently in view.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
+  const sections = links
+    .map((link) => document.querySelector<HTMLElement>(link.getAttribute('href')!))
+    .filter((el): el is HTMLElement => Boolean(el));
+
+  if ('IntersectionObserver' in window && sections.length) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = `#${entry.target.id}`;
+          links.forEach((link) => link.setAttribute('aria-current', String(link.getAttribute('href') === id)));
+        }
+      },
+      { rootMargin: '-45% 0px -50% 0px' },
+    );
+    sections.forEach((section) => observer.observe(section));
+  }
+
+  if (button && panel) {
+    const isOpen = () => button.getAttribute('aria-expanded') === 'true';
+
+    const setOpen = (open: boolean, returnFocus = false) => {
+      button.setAttribute('aria-expanded', String(open));
+      button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      panel.dataset.open = String(open);
+      if (!open && returnFocus) button.focus();
+    };
+
+    button.addEventListener('click', () => setOpen(!isOpen()));
+
+    // Choosing a destination closes the panel so the page is not left covered.
+    panel.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isOpen()) setOpen(false, true);
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target as Node;
+      if (isOpen() && !panel.contains(target) && !button.contains(target)) setOpen(false);
+    });
+
+    window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>

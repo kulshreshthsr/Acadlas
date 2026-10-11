@@ -1,0 +1,48 @@
+---
+import Icon from './Icon.astro';
+import { contactEmail } from '../data/site';
+
+const mailto = contactEmail
+  ? `mailto:${contactEmail}?subject=${encodeURIComponent('Acadlas School: our school would like to help')}`
+  : '';
+---
+
+<section aria-labelledby="closing-title" data-surface="dark" data-closing class="relative isolate overflow-hidden bg-night">
+  <canvas data-closing-contours class="absolute inset-0 -z-10 size-full opacity-80" aria-hidden="true"></canvas>
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(50%_60%_at_50%_110%,rgb(244_166_42/0.22),transparent_70%)]"></div>
+
+  <div class="wrap py-[clamp(6rem,4rem+8vw,11rem)] text-center">
+    <h2 id="closing-title" class="mx-auto max-w-[56rem] text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.98]">
+      Built with schools, one workflow at a time.
+    </h2>
+    <p class="lead mx-auto mt-7 max-w-[38rem] text-slate-300">
+      We're starting with the jobs every school does daily: admissions, classes, attendance and fees. If you run or
+      work at a school, we'd like to hear how your day really goes.
+    </p>
+    <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+      {
+        mailto ? (
+          <a href={mailto} class="btn btn-sun">
+            Email the Acadlas team
+          </a>
+        ) : (
+          <a href="#try" class="btn btn-sun">
+            Try the demo
+          </a>
+        )
+      }
+      <a href="#how-it-works" class="btn btn-ghost">
+        <Icon name="undo" size={18} />
+        Replay how it works
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mountContours } from '../scripts/contours';
+
+  const section = document.querySelector<HTMLElement>('[data-closing]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-closing-contours]');
+  if (section && canvas) mountContours(canvas, section, { levels: [-0.3, -0.1, 0.1, 0.3, 0.5] });
+</script>

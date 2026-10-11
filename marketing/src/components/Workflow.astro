@@ -1,0 +1,361 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../data/icons';
+
+// The intended Acadlas School workflow. Each step builds on the one before it,
+// and each adds something to the same student's record (the chips under the window).
+const steps: { title: string; body: string; screen: string; chip: string; icon: IconName }[] = [
+  {
+    title: 'Set up your school',
+    body: 'Add your school, board, academic year and terms. Everything after this builds on it.',
+    screen: 'School setup',
+    chip: 'Greenfield Public School',
+    icon: 'building',
+  },
+  {
+    title: 'Shape the academic structure',
+    body: 'Create classes, sections and subjects once, then carry them into every new year.',
+    screen: 'Academic structure',
+    chip: 'Class 6, Section B',
+    icon: 'classes',
+  },
+  {
+    title: 'Admit a student',
+    body: 'Capture the student and their guardian in one form, so nothing has to be typed twice.',
+    screen: 'New admission',
+    chip: 'Aarav and guardian',
+    icon: 'admission',
+  },
+  {
+    title: 'Place them in a class',
+    body: 'Assign a section and a roll number. Class lists and registers update on their own.',
+    screen: 'Class 6-B',
+    chip: 'Roll no. 23',
+    icon: 'students',
+  },
+  {
+    title: 'Take attendance',
+    body: 'Teachers mark the register from their phone. Every absence lands on the student’s record.',
+    screen: 'Attendance',
+    chip: 'Present today',
+    icon: 'attendance',
+  },
+  {
+    title: 'Track fees',
+    body: 'Fee plans, payments, receipts and balances, all tied to the same student.',
+    screen: 'Fees',
+    chip: 'Term 2 paid',
+    icon: 'fees',
+  },
+];
+
+const classes = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+const subjects = ['English', 'Hindi', 'Mathematics', 'Science', 'Social Science', 'Sanskrit', 'Computers'];
+const roster = [
+  { roll: 21, name: 'Advik Rao' },
+  { roll: 22, name: 'Ananya Das' },
+  { roll: 23, name: 'Aarav Sharma', isNew: true },
+  { roll: 24, name: 'Bhavya Jain' },
+  { roll: 25, name: 'Diya Menon' },
+  { roll: 26, name: 'Farhan Ali' },
+];
+const register = [
+  { name: 'Aarav Sharma', present: true },
+  { name: 'Advik Rao', present: true },
+  { name: 'Ananya Das', present: false },
+  { name: 'Bhavya Jain', present: true },
+  { name: 'Diya Menon', present: true },
+  { name: 'Farhan Ali', present: true },
+  { name: 'Gauri Kulkarni', present: true },
+  { name: 'Ishaan Bose', present: false },
+  { name: 'Kavya Reddy', present: true },
+];
+const feePlan = [
+  { term: 'Term 1', amount: '₹6,500', status: 'Paid', tone: 'paid' },
+  { term: 'Term 2', amount: '₹6,500', status: 'Paid today', tone: 'new' },
+  { term: 'Term 3', amount: '₹6,500', status: 'Due 15 Feb', tone: 'due' },
+];
+---
+
+<section id="how-it-works" aria-labelledby="how-title" data-surface="dark" class="relative bg-night" data-flow data-screens={JSON.stringify(steps.map((s) => s.screen))}>
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_40%_at_80%_20%,rgb(20_152_155/0.18),transparent_70%),radial-gradient(40%_30%_at_0%_80%,rgb(31_111_178/0.18),transparent_70%)]"></div>
+
+  <div class="wrap relative pt-24 sm:pt-32">
+    <div class="max-w-[48rem]">
+      <p class="kicker">How it works</p>
+      <h2 id="how-title" class="mt-5">From setup to fee receipt, in one flow.</h2>
+      <p class="lead mt-6 max-w-[36rem] text-slate-300">
+        Six steps, each building on the last. Watch one student's record fill up as you scroll.
+      </p>
+    </div>
+
+    <div class="relative mt-10 pb-24 sm:pb-32 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+      <!-- The product window. Sticky under the header on phones, alongside the steps on desktop. -->
+      <div class="sticky top-[4.75rem] z-20 -mx-1 lg:top-[max(6rem,calc(50svh-14rem))] lg:col-start-2 lg:row-start-1 lg:mx-0 lg:self-start">
+        <div class="window bg-white ring-1 ring-white/10" aria-hidden="true">
+          <div class="window-bar justify-between">
+            <span class="flex items-center gap-1.5"><i class="size-2.5 rounded-full bg-slate-200"></i><i class="size-2.5 rounded-full bg-slate-200"></i><i class="size-2.5 rounded-full bg-slate-200"></i></span>
+            <span class="label text-ink-800" data-flow-title>{steps[0].screen}</span>
+            <span class="label text-slate-500">Sample</span>
+          </div>
+
+          <div class="relative h-[13.5rem] overflow-hidden bg-slate-50 sm:h-[19rem] lg:h-[22rem]">
+            <!-- 1. School setup -->
+            <div class="flow-screen is-active" data-flow-screen>
+              <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                <label class="field col-span-2"><span>School name</span><span><span class="anim-type inline-block">Greenfield Public School</span></span></label>
+                <label class="field"><span>Board</span><span><span class="anim-type inline-block" style="--d:400ms">CBSE</span></span></label>
+                <label class="field"><span>Academic year</span><span><span class="anim-type inline-block" style="--d:600ms">2026–27</span></span></label>
+                <label class="field max-sm:hidden"><span>Terms</span><span><span class="anim-type inline-block" style="--d:800ms">Three terms</span></span></label>
+                <label class="field max-sm:hidden"><span>Working days</span><span><span class="anim-type inline-block" style="--d:1000ms">Monday to Saturday</span></span></label>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <span class="anim-pop inline-flex items-center gap-2 rounded-full bg-ink-800 px-4 py-2 text-sm font-semibold text-white" style="--d:1300ms">
+                  <Icon name="check" size={16} /> Saved
+                </span>
+              </div>
+            </div>
+
+            <!-- 2. Academic structure -->
+            <div class="flow-screen" data-flow-screen>
+              <div class="grid h-full gap-3 sm:grid-cols-[1fr_1.1fr] sm:gap-4">
+                <div>
+                  <p class="label text-slate-500">Classes</p>
+                  <div class="mt-2 flex flex-wrap gap-1.5">
+                    {
+                      classes.map((c, i) => (
+                        <span
+                          class:list={[
+                            'anim-pop rounded-md px-2.5 py-1 text-xs font-semibold sm:text-[0.8125rem]',
+                            c === '6' ? 'bg-marigold-500 text-night' : 'bg-white text-ink-800 ring-1 ring-slate-200',
+                          ]}
+                          style={`--d:${i * 45}ms`}
+                        >
+                          {c}
+                        </span>
+                      ))
+                    }
+                  </div>
+                </div>
+                <div class="anim-rise rounded-lg bg-white p-3 ring-1 ring-slate-200 max-sm:hidden" style="--d:500ms">
+                  <p class="font-bold text-ink-800 [font-stretch:112%]">Class 6</p>
+                  <div class="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                    <span class="rounded-md bg-slate-50 py-2"><b class="block text-ink-800">6-A</b>34</span>
+                    <span class="rounded-md bg-lagoon-50 py-2 ring-1 ring-lagoon-400"><b class="block text-ink-800">6-B</b>33</span>
+                    <span class="rounded-md bg-slate-50 py-2"><b class="block text-ink-800">6-C</b>32</span>
+                  </div>
+                  <p class="label mt-3 text-slate-500">Subjects</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1">
+                    {subjects.map((s, i) => <span class="anim-pop rounded-full bg-cobalt-100 px-2 py-0.5 text-[0.6875rem] font-medium text-cobalt-600" style={`--d:${700 + i * 60}ms`}>{s}</span>)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Admission -->
+            <div class="flow-screen" data-flow-screen>
+              <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                <p class="label col-span-2 -mb-1 text-slate-500 max-sm:hidden">Student and guardian, in one form</p>
+                <label class="field"><span>Student</span><span><span class="anim-type inline-block">Aarav Sharma</span></span></label>
+                <label class="field"><span>Guardian</span><span><span class="anim-type inline-block" style="--d:500ms">Neha Sharma</span></span></label>
+                <label class="field"><span>Class</span><span><span class="anim-type inline-block" style="--d:300ms">6</span></span></label>
+                <label class="field"><span>Phone</span><span><span class="anim-type inline-block" style="--d:800ms">98xxx xx210</span></span></label>
+              </div>
+              <div class="anim-rise mt-4 flex items-center gap-3 rounded-lg bg-lagoon-50 p-3 text-sm ring-1 ring-lagoon-200" style="--d:1200ms">
+                <span class="grid size-7 shrink-0 place-items-center rounded-full bg-lagoon-500 text-white"><Icon name="check" size={15} /></span>
+                <span class="text-ink-800"><b>Admitted.</b> Admission no. 2026/0418</span>
+              </div>
+            </div>
+
+            <!-- 4. Class assignment -->
+            <div class="flow-screen" data-flow-screen>
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-semibold text-ink-800">Class 6-B <span class="font-normal text-slate-500">Ms. Kavita Iyer</span></p>
+                <p class="label text-slate-500">34 students</p>
+              </div>
+              <ul class="mt-3 divide-y divide-slate-200 overflow-hidden rounded-lg bg-white text-sm ring-1 ring-slate-200">
+                {
+                  roster.map((r, i) => (
+                    <li
+                      class:list={[
+                        'flex items-center gap-3 px-3 py-2',
+                        r.isNew ? 'anim-rise bg-marigold-50' : '',
+                        i > 3 ? 'max-sm:hidden' : '',
+                      ]}
+                      style={r.isNew ? '--d:200ms' : undefined}
+                    >
+                      <span class="w-6 text-slate-500">{r.roll}</span>
+                      <span class="flex-1 font-medium text-ink-800">{r.name}</span>
+                      {r.isNew && <span class="anim-pop rounded-full bg-marigold-500 px-2 py-0.5 text-[0.6875rem] font-bold text-night" style="--d:600ms">New</span>}
+                    </li>
+                  ))
+                }
+              </ul>
+            </div>
+
+            <!-- 5. Attendance -->
+            <div class="flow-screen" data-flow-screen>
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-semibold text-ink-800">Class 6-B register</p>
+                <p class="label text-slate-500">Monday, 8:42 am</p>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {
+                  register.map((s, i) => (
+                    <span class:list={['flex items-center justify-between gap-2 rounded-md bg-white px-2.5 py-2 text-xs ring-1 ring-slate-200 sm:text-[0.8125rem]', i > 3 ? 'max-sm:hidden' : '']}>
+                      <span class="truncate font-medium text-ink-800">{s.name}</span>
+                      <span
+                        class:list={['anim-pop grid size-6 shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold', s.present ? 'bg-lagoon-500 text-white' : 'bg-coral-500 text-white']}
+                        style={`--d:${200 + i * 140}ms`}
+                      >
+                        {s.present ? 'P' : 'A'}
+                      </span>
+                    </span>
+                  ))
+                }
+              </div>
+              <div class="mt-4">
+                <div class="flex justify-between text-xs"><span class="font-semibold text-ink-800">Present 32 of 34</span><span class="text-slate-500">94%</span></div>
+                <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"><div class="anim-bar h-full w-[94%] origin-left rounded-full bg-lagoon-500" style="--d:900ms"></div></div>
+              </div>
+            </div>
+
+            <!-- 6. Fees -->
+            <div class="flow-screen" data-flow-screen>
+              <div class="grid gap-3 sm:grid-cols-[1.3fr_1fr] sm:gap-4">
+                <div class="overflow-hidden rounded-lg bg-white text-sm ring-1 ring-slate-200">
+                  {
+                    feePlan.map((f) => (
+                      <div class:list={['flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 last:border-0', f.tone === 'new' && 'anim-rise bg-lagoon-50']} style={f.tone === 'new' ? '--d:300ms' : undefined}>
+                        <span class="font-medium text-ink-800">{f.term}</span>
+                        <span class="text-slate-600">{f.amount}</span>
+                        <span
+                          class:list={[
+                            'rounded-full px-2 py-0.5 text-[0.6875rem] font-bold',
+                            f.tone === 'due' ? 'bg-marigold-100 text-marigold-700' : 'bg-lagoon-100 text-lagoon-700',
+                          ]}
+                        >
+                          {f.status}
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
+                <div class="relative overflow-hidden max-sm:hidden">
+                  <div class="anim-rise rounded-lg border-t-4 border-marigold-500 bg-white p-3 shadow-lift" style="--d:700ms">
+                    <p class="label text-slate-500">Receipt 1187</p>
+                    <p class="mt-1 text-2xl font-bold text-ink-800 [font-stretch:115%]">₹6,500</p>
+                    <p class="text-xs text-slate-600">Term 2, paid by UPI</p>
+                    <p class="mt-2 border-t border-dashed border-slate-200 pt-2 text-xs text-slate-600">Aarav Sharma, Class 6-B</p>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 text-xs text-slate-600 sm:text-sm">Balance for the year: <b class="text-ink-800">₹6,500</b></p>
+            </div>
+          </div>
+
+          <!-- The record filling up. -->
+          <div class="flex items-center gap-2 overflow-hidden border-t border-slate-100 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
+            <span class="grid size-7 shrink-0 place-items-center rounded-lg bg-marigold-500 text-[0.6875rem] font-extrabold text-night">AS</span>
+            <ul class="flex min-w-0 flex-1 gap-1.5 overflow-hidden" data-flow-chips>
+              {
+                steps.map((s, i) => (
+                  <li
+                    data-chip={i}
+                    data-on={i === 0 ? 'true' : 'false'}
+                    class="flow-chip flex shrink-0 items-center gap-1 rounded-full bg-lagoon-50 px-2.5 py-1 text-[0.6875rem] font-semibold whitespace-nowrap text-lagoon-700 sm:text-xs"
+                  >
+                    <Icon name={s.icon} size={13} />
+                    {s.chip}
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- The steps. Each one is tall enough to hold the window on screen while it is read. -->
+      <ol class="relative mt-6 lg:col-start-1 lg:row-start-1 lg:mt-0" data-flow-steps>
+        <span aria-hidden="true" class="absolute bottom-0 left-[1.1875rem] top-0 hidden w-px bg-white/10 lg:block"></span>
+        <span aria-hidden="true" class="absolute left-[1.1875rem] top-0 hidden h-full w-px origin-top scale-y-0 bg-marigold-400 lg:block" data-flow-progress></span>
+        {
+          steps.map((step, i) => (
+            <li
+              data-flow-step
+              aria-current={i === 0 ? 'step' : 'false'}
+              class="group relative flex min-h-[48svh] items-start gap-5 py-6 last:min-h-[40svh] lg:min-h-[78svh] lg:items-center lg:py-0 lg:last:min-h-[78svh]"
+            >
+              <span class="relative z-10 grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-night text-sm font-bold text-slate-400 transition-colors duration-500 [font-stretch:115%] group-aria-[current=step]:border-marigold-400 group-aria-[current=step]:bg-marigold-500 group-aria-[current=step]:text-night">
+                {i + 1}
+              </span>
+              <div class="transition-opacity duration-500 lg:opacity-40 lg:group-aria-[current=step]:opacity-100">
+                <h3 class="text-2xl sm:text-[1.75rem]">{step.title}</h3>
+                <p class="mt-3 max-w-[26rem] text-lg leading-relaxed text-slate-300">{step.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Highlights the step crossing the reading line and shows its screen.
+  const root = document.querySelector<HTMLElement>('[data-flow]');
+  if (root) {
+    const steps = [...root.querySelectorAll<HTMLElement>('[data-flow-step]')];
+    const screens = [...root.querySelectorAll<HTMLElement>('[data-flow-screen]')];
+    const chips = [...root.querySelectorAll<HTMLElement>('[data-chip]')];
+    const title = root.querySelector<HTMLElement>('[data-flow-title]');
+    const progress = root.querySelector<HTMLElement>('[data-flow-progress]');
+    const list = root.querySelector<HTMLElement>('[data-flow-steps]');
+    const chipList = root.querySelector<HTMLElement>('[data-flow-chips]');
+    const screenNames = JSON.parse(root.dataset.screens ?? '[]') as string[];
+    const wide = window.matchMedia('(min-width: 64rem)');
+    let active = -1;
+    let queued = false;
+
+    const setActive = (index: number) => {
+      if (index === active) return;
+      active = index;
+      steps.forEach((s, i) => s.setAttribute('aria-current', i === index ? 'step' : 'false'));
+      screens.forEach((s, i) => s.classList.toggle('is-active', i === index));
+      chips.forEach((c, i) => (c.dataset.on = String(i <= index)));
+      if (title) title.textContent = screenNames[index] ?? '';
+      // Keep the newest chip in view when the strip is narrower than the record.
+      const chip = chips[index];
+      if (chipList && chip) {
+        chipList.scrollTo({ left: Math.max(0, chip.offsetLeft + chip.offsetWidth - chipList.clientWidth), behavior: 'smooth' });
+      }
+    };
+
+    const update = () => {
+      queued = false;
+      const line = window.innerHeight * (wide.matches ? 0.55 : 0.78);
+      let index = 0;
+      steps.forEach((step, i) => {
+        if (step.getBoundingClientRect().top < line) index = i;
+      });
+      setActive(index);
+
+      if (progress && list) {
+        const rect = list.getBoundingClientRect();
+        const p = Math.min(1, Math.max(0, (line - rect.top) / rect.height));
+        progress.style.transform = `scaleY(${p})`;
+      }
+    };
+
+    const onScroll = () => {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  }
+</script>

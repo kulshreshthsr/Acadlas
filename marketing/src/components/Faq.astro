@@ -1,0 +1,61 @@
+---
+import Icon from './Icon.astro';
+
+const faqs = [
+  {
+    q: 'Can our school use Acadlas School today?',
+    a: "Not yet. Acadlas School is in development and isn't for sale. This page shows what we're building and how it's meant to work.",
+  },
+  {
+    q: 'Which schools is it for?',
+    a: 'Schools that run classes and sections, terms, attendance registers and fee instalments. Coaching institutes and colleges work differently, so they are planned as separate products: Acadlas Institute and Acadlas Campus.',
+  },
+  {
+    q: 'Do we have to buy every Acadlas product?',
+    a: 'No. Each product is meant to be used on its own. If you add another later, it connects to what you already have instead of starting from scratch.',
+  },
+  {
+    q: 'Will teachers be able to use it on their phones?',
+    a: 'Yes, that is a design requirement from the start. Taking attendance, checking a class list or looking up a student should all work on an ordinary phone.',
+  },
+  {
+    q: 'How much will it cost?',
+    a: "Pricing hasn't been announced yet.",
+  },
+  {
+    q: 'Is the demo on this page real?',
+    a: 'It runs the intended flows on sample data, entirely in your browser. Nothing you type is saved or sent anywhere.',
+  },
+];
+
+// FAQ structured data for search engines; mirrors the visible questions exactly.
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+---
+
+<section id="faq" aria-labelledby="faq-title" class="bg-paper pb-[clamp(4.5rem,2.5rem+6vw,8.5rem)]">
+  <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+    <div>
+      <h2 id="faq-title" class="text-[clamp(1.75rem,1.2rem+2vw,2.75rem)]">Questions schools ask</h2>
+    </div>
+    <div class="flex flex-col gap-2.5">
+      {
+        faqs.map((f) => (
+          <details class="faq group rounded-[var(--radius-lg)] bg-white shadow-soft ring-1 ring-slate-200 transition-shadow open:shadow-lift">
+            <summary class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-lg font-semibold text-ink-800 [font-stretch:110%] sm:px-6 [&::-webkit-details-marker]:hidden">
+              {f.q}
+              <span class="grid size-9 shrink-0 place-items-center rounded-full bg-slate-100 text-ink-800 transition-transform duration-300 group-open:rotate-45 group-open:bg-marigold-500">
+                <Icon name="plus" size={18} />
+              </span>
+            </summary>
+            <p class="max-w-[40rem] px-5 pb-6 text-[1.0625rem] leading-relaxed sm:px-6">{f.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</section>

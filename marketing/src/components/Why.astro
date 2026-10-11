@@ -1,0 +1,158 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../data/icons';
+
+// The scraps a single student's information is spread across today. On scroll they gather into one record.
+// x and y are fractions of the stage size from its centre; r is rotation in degrees.
+const scraps = [
+  { id: 'register', x: -0.3, y: -0.3, r: -7 },
+  { id: 'sheet', x: 0.27, y: -0.32, r: 5 },
+  { id: 'chat', x: 0.33, y: 0.02, r: 3 },
+  { id: 'sticky', x: -0.33, y: 0.06, r: 6 },
+  { id: 'attendance', x: -0.2, y: 0.36, r: -4 },
+  { id: 'receipt', x: 0.25, y: 0.35, r: -8 },
+  { id: 'phone', x: 0.02, y: -0.04, r: -2 },
+];
+const pos = Object.fromEntries(scraps.map((s) => [s.id, s]));
+const style = (id: string) => `--x:${pos[id].x};--y:${pos[id].y};--r:${pos[id].r}`;
+
+const recordRows: { icon: IconName; k: string; v: string }[] = [
+  { icon: 'admission', k: 'Admission', v: 'No. 2026/0418' },
+  { icon: 'guardian', k: 'Guardian', v: 'Neha Sharma, 98xxx xx210' },
+  { icon: 'classes', k: 'Class', v: '6-B, moved from 6-A' },
+  { icon: 'attendance', k: 'Attendance', v: '96% this term' },
+  { icon: 'fees', k: 'Term 2 fee', v: '₹6,500 paid, receipt 1187' },
+];
+
+const marks = (row: string[]) => row.map((m) => ({ m, absent: m === 'A' }));
+---
+
+<section id="why" aria-labelledby="why-title" class="relative overflow-hidden bg-paper" data-gather>
+  <div class="wrap grid min-h-[100svh] content-center items-center gap-4 py-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:py-0">
+    <div class="relative z-10">
+      <p class="kicker">Why Acadlas School</p>
+      <div class="relative mt-5 grid">
+        <!-- Two states of the same message share one grid cell. Scrolling swaps them. -->
+        <div class="col-start-1 row-start-1" data-gather-before>
+          <h2 id="why-title">Today, one student lives in seven places.</h2>
+          <p class="lead mt-5 max-w-[30rem] max-sm:text-base">
+            An admission register, a fee spreadsheet, a receipt book, a phone full of guardian messages. Every change
+            has to be copied by hand, and the copies drift apart.
+          </p>
+        </div>
+        <div class="col-start-1 row-start-1 js:opacity-0" data-gather-after>
+          <p class="text-h2 font-[760] tracking-[-0.04em] text-ink-800 [font-stretch:122%] [text-wrap:balance]">
+            In Acadlas School, they live in one record.
+          </p>
+          <p class="lead mt-5 max-w-[30rem] max-sm:text-base">
+            Admission, guardian, class, attendance and fees stay attached to the student. Update something once and
+            every screen that needs it sees the change.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative mx-auto h-[22rem] w-full max-w-[40rem] sm:h-[32rem] lg:h-[38rem]" data-gather-stage aria-hidden="true">
+      <!-- Scraps. Hidden without JavaScript, where the finished record is shown on its own. -->
+      <div class="scrap hidden js:block" data-scrap style={style('register')}>
+        <div class="w-[10.5rem] rounded-md bg-white p-3 shadow-lift sm:w-[14rem] sm:p-4">
+          <p class="label text-ink-800">Admission register 2026</p>
+          <div class="mt-2 space-y-1.5 text-[0.75rem] text-slate-600 sm:text-[0.8125rem]">
+            <p class="border-b border-cobalt-100 pb-1">418. Aarav Sharma, 6A</p>
+            <p class="border-b border-cobalt-100 pb-1">419. Ishita Verma, 4C</p>
+            <p class="border-b border-cobalt-100 pb-1 line-through decoration-coral-500">420. Kabir Khan, 6B</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('sheet')}>
+        <div class="w-[11rem] overflow-hidden rounded-md bg-white shadow-lift sm:w-[15rem]">
+          <p class="bg-lagoon-600 px-3 py-1.5 text-[0.6875rem] font-semibold text-white sm:text-xs">fees_term2_FINAL(3).xlsx</p>
+          <div class="grid grid-cols-[1.5fr_1fr_1fr] text-[0.6875rem] text-slate-600 sm:text-xs">
+            <span class="border-b border-r border-slate-200 px-2 py-1 font-semibold">Name</span>
+            <span class="border-b border-r border-slate-200 px-2 py-1 font-semibold">Due</span>
+            <span class="border-b border-slate-200 px-2 py-1 font-semibold">Paid</span>
+            <span class="border-b border-r border-slate-200 px-2 py-1">Aarav S.</span>
+            <span class="border-b border-r border-slate-200 px-2 py-1">6500</span>
+            <span class="border-b border-slate-200 bg-marigold-100 px-2 py-1">?</span>
+            <span class="border-r border-slate-200 px-2 py-1">Aarav Sharma</span>
+            <span class="border-r border-slate-200 px-2 py-1">6500</span>
+            <span class="px-2 py-1">6500</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('chat')}>
+        <div class="w-[10.5rem] rounded-2xl rounded-tl-sm bg-lagoon-50 p-3 shadow-lift sm:w-[14rem]">
+          <p class="text-[0.75rem] font-semibold text-lagoon-700">Aarav's mother</p>
+          <p class="mt-1 text-[0.8125rem] leading-snug text-ink-800">Ma'am, was the term 2 fee received? I paid on Monday.</p>
+          <p class="mt-1 text-right text-[0.6875rem] text-slate-500">9:14 pm</p>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('sticky')}>
+        <div class="w-[9.5rem] bg-marigold-100 p-3 shadow-lift sm:w-[11rem] sm:p-4">
+          <p class="text-[0.8125rem] font-medium leading-snug text-ink-800">Aarav moved from 6A to 6B. Update roll list and fee sheet!</p>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('attendance')}>
+        <div class="w-[10.5rem] rounded-md bg-white p-3 shadow-lift sm:w-[14rem]">
+          <p class="label text-ink-800">Register, Class 6A</p>
+          <div class="mt-2 grid grid-cols-[auto_repeat(6,1fr)] items-center gap-1 text-[0.6875rem] text-slate-600">
+            <span class="pr-1">Aarav</span>
+            {marks(['P', 'P', 'A', 'P', 'P', 'P']).map(({ m, absent }) => <span class:list={['text-center font-semibold', absent ? 'text-coral-700' : 'text-lagoon-600']}>{m}</span>)}
+            <span class="pr-1">Diya</span>
+            {marks(['P', 'P', 'P', 'P', 'A', 'P']).map(({ m, absent }) => <span class:list={['text-center font-semibold', absent ? 'text-coral-700' : 'text-lagoon-600']}>{m}</span>)}
+          </div>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('receipt')}>
+        <div class="w-[9.5rem] border-t-2 border-dashed border-slate-300 bg-white p-3 shadow-lift sm:w-[12rem]">
+          <p class="label text-ink-800">Receipt no. 1187</p>
+          <p class="mt-1 text-[0.75rem] text-slate-600">Received from Aarav Sharma</p>
+          <p class="mt-1 text-lg font-bold text-ink-800 [font-stretch:115%]">₹6,500</p>
+        </div>
+      </div>
+
+      <div class="scrap hidden js:block" data-scrap style={style('phone')}>
+        <div class="w-[9.5rem] rounded-[1.25rem] border-4 border-ink-900 bg-ink-800 p-3 text-white shadow-lift sm:w-[11rem]">
+          <p class="text-[0.6875rem] text-slate-400">Notes</p>
+          <p class="mt-1 text-[0.8125rem] font-medium leading-snug">Aarav's guardian has a new number, 98xxx xx210</p>
+        </div>
+      </div>
+
+      <!-- The one record everything gathers into. -->
+      <div class="absolute left-1/2 top-1/2 w-[min(100%,26rem)] -translate-x-1/2 -translate-y-1/2 js:opacity-0" data-record>
+        <div class="window">
+          <div class="flex items-center gap-3 bg-night p-4 text-white">
+            <span class="grid size-11 place-items-center rounded-2xl bg-marigold-500 font-extrabold text-night [font-stretch:115%]">AS</span>
+            <span class="flex flex-col">
+              <span class="text-lg font-bold leading-tight [font-stretch:115%]">Aarav Sharma</span>
+              <span class="text-sm text-slate-300">Class 6-B, roll no. 23</span>
+            </span>
+          </div>
+          <dl class="divide-y divide-slate-100 px-4 text-sm">
+            {
+              recordRows.map((row) => (
+                <div class="flex items-center gap-3 py-2.5 sm:py-3">
+                  <Icon name={row.icon} size={18} class="shrink-0 text-lagoon-600" />
+                  <dt class="w-24 shrink-0 text-slate-500">{row.k}</dt>
+                  <dd class="font-semibold text-ink-800">{row.v}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mountGather } from '../scripts/gather';
+
+  const root = document.querySelector<HTMLElement>('[data-gather]');
+  if (root) mountGather(root);
+</script>

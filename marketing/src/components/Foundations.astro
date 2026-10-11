@@ -1,0 +1,62 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../data/icons';
+
+// Commitments the product is being built to. Written as intent, not as shipped features.
+const rules: { icon: IconName; title: string; body: string }[] = [
+  {
+    icon: 'lock',
+    title: "Each school's data stays separate",
+    body: "Many schools can use Acadlas, but no school can see another's records. That separation is checked on the server for every request.",
+  },
+  {
+    icon: 'staff',
+    title: 'Access that matches the role',
+    body: 'Office staff, teachers and principals each see what their role allows. Permissions are enforced on the server, not just hidden on screen.',
+  },
+  {
+    icon: 'phone',
+    title: 'Made for everyday phones',
+    body: 'Registers get marked in classrooms, not offices. Every screen is designed for ordinary phones and patchy connections.',
+  },
+  {
+    icon: 'reports',
+    title: 'A trail for what matters',
+    body: 'Important changes, like fee receipts and admission edits, are recorded with who made them and when.',
+  },
+  {
+    icon: 'puzzle',
+    title: 'One product, not the whole suite',
+    body: 'Acadlas School stands on its own. Other Acadlas products connect only if, and when, you want them to.',
+  },
+];
+---
+
+<section aria-labelledby="rules-title" class="section bg-paper">
+  <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+    <div class="lg:sticky lg:top-28 lg:self-start">
+      <p class="kicker">How it's being built</p>
+      <h2 id="rules-title" class="mt-5">The careful parts, planned from day one.</h2>
+      <p class="lead mt-6 max-w-[28rem]">
+        Software that holds a school's records has to earn trust. These are the rules Acadlas School is being built
+        to.
+      </p>
+    </div>
+
+    <ul class="border-t border-slate-300">
+      {
+        rules.map((rule, i) => (
+          <li class="group grid gap-4 border-b border-slate-300 py-7 sm:grid-cols-[3.5rem_minmax(0,1fr)] sm:gap-6 sm:py-9" data-reveal style={`--delay:${i * 60}ms`}>
+            <span class="grid size-12 place-items-center rounded-2xl bg-white text-lagoon-600 shadow-soft ring-1 ring-slate-200 transition-colors duration-300 group-hover:bg-ink-800 group-hover:text-marigold-400">
+              <Icon name={rule.icon} size={22} />
+            </span>
+            <div>
+              <h3 class="text-xl sm:text-[1.375rem]">{rule.title}</h3>
+              <p class="mt-2 max-w-[34rem] text-[1.0625rem] leading-relaxed">{rule.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

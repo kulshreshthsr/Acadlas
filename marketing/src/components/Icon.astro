@@ -1,0 +1,27 @@
+---
+import { icons, type IconName } from '../data/icons';
+
+// Stroke icon set on a 24px grid. Decorative: always pair with visible text.
+interface Props {
+  name: IconName;
+  size?: number;
+  class?: string;
+}
+
+const { name, size = 20, class: className } = Astro.props;
+---
+
+<svg
+  aria-hidden="true"
+  focusable="false"
+  viewBox="0 0 24 24"
+  width={size}
+  height={size}
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.75"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  class={className}
+  set:html={icons[name]}
+/>

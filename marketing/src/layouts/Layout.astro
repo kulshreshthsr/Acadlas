@@ -1,0 +1,107 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '../styles/global.css';
+
+import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+
+// Only emitted once a production domain is configured (see astro.config.mjs).
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+
+const structuredData = Astro.site
+  ? {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': new URL('/#organization', Astro.site).href,
+          name: 'Acadlas',
+          url: Astro.site.href,
+          logo: new URL('/favicon-192x192.png', Astro.site).href,
+        },
+        {
+          '@type': 'WebSite',
+          '@id': new URL('/#website', Astro.site).href,
+          name: 'Acadlas',
+          url: Astro.site.href,
+          publisher: { '@id': new URL('/#organization', Astro.site).href },
+        },
+      ],
+    }
+  : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#061830" />
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <!-- Web-sized icons generated from public/favicon-acadlas.png by `npm run brand:optimize`. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Acadlas" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
+
+    {structuredData && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}
+
+    <!-- Marks the document as script-capable so reveal and menu styles only apply when JS can run them. -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-marigold-500 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-night"
+    >
+      Skip to main content
+    </a>
+
+    <slot />
+
+    <script>
+      // One-shot reveal: each element is observed until it first enters the viewport, then released.
+      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if ('IntersectionObserver' in window && !reduceMotion) {
+        const observer = new IntersectionObserver(
+          (entries, obs) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-visible');
+              obs.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+        );
+        items.forEach((el) => observer.observe(el));
+      } else {
+        items.forEach((el) => el.classList.add('is-visible'));
+      }
+    </script>
+  </body>
+</html>
