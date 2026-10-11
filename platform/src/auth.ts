@@ -18,6 +18,13 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization } from 'better-auth/plugins';
 import { db, schema } from './db';
 
+// The browser app runs on an origin of its own — a different port in development,
+// a different subdomain in production. Better Auth refuses any sign-in request from
+// an origin it has not been told about, so this list has to include the frontend.
+// It reads the same variable the CORS middleware does (see src/index.ts), so the two
+// can never drift apart and leave the app rejected by one but allowed by the other.
+const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',');
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -57,6 +64,8 @@ export const auth = betterAuth({
       },
     }),
   ],
+
+  trustedOrigins: allowedOrigins,
 
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
