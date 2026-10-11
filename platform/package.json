@@ -1,0 +1,28 @@
+{
+  "name": "platform",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "auth:generate": "npx auth@latest generate --config src/auth.ts --output src/db/auth-schema.ts -y",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "better-auth": "^1.3.26",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.6.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@types/node": "^22.20.5",
+    "drizzle-kit": "^0.31.6",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.0"
+  }
+}
