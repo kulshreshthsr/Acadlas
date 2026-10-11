@@ -12,10 +12,13 @@ import { Wordmark } from '../components/Wordmark';
 /** Shown only while the session is being checked, which is normally a few hundred milliseconds. */
 export function Checking({ label }: { label: string }) {
   return (
-    <div className="grid min-h-svh place-items-center px-6">
-      <div className="rise flex flex-col items-center gap-4" style={{ '--d': '220ms' } as React.CSSProperties}>
-        <Wordmark className="h-7" />
-        <p className="text-[0.9375rem] text-slate-500">{label}</p>
+    <div data-surface="dark" className="grid min-h-svh place-items-center bg-night px-6">
+      <div className="rise flex flex-col items-center gap-3.5" style={{ '--d': '200ms' } as React.CSSProperties}>
+        <Wordmark tone="light" className="h-6" />
+        <p className="flex items-center gap-2 text-[0.875rem] text-slate-400">
+          <span className="size-1.5 animate-pulse rounded-full bg-marigold-400" />
+          {label}
+        </p>
       </div>
     </div>
   );

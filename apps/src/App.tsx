@@ -7,6 +7,7 @@ import { CreateSchool } from './routes/CreateSchool';
 import { Dashboard } from './routes/Dashboard';
 import { RequireAuth, RequireGuest, RouteHome } from './routes/guards';
 import { Wordmark } from './components/Wordmark';
+import { ContourField } from './components/ContourField';
 
 export function App() {
   return (
@@ -54,12 +55,13 @@ export function App() {
 
 function NotFound() {
   return (
-    <div className="grid min-h-svh place-items-center px-6">
-      <div className="w-full max-w-sm">
-        <Wordmark className="h-7" />
-        <h1 className="mt-7">This page does not exist</h1>
-        <p className="lead mt-3">The link may be out of date, or the address mistyped.</p>
-        <Link className="btn btn-ink mt-7" to="/">
+    <div data-surface="dark" className="relative grid min-h-svh place-items-center px-6">
+      <ContourField />
+      <div className="rise relative z-10 w-full max-w-sm text-center">
+        <Wordmark tone="light" className="mx-auto h-6" />
+        <h1 className="mt-6 text-white">This page does not exist</h1>
+        <p className="mt-2.5 text-slate-400">The link may be out of date, or the address mistyped.</p>
+        <Link className="btn btn-sun mt-6" to="/">
           Go to your school
         </Link>
       </div>
