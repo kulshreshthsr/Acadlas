@@ -57,4 +57,15 @@ export function describeAuthError(error: AuthError): string {
   return error.message ?? 'Something went wrong. Try again.';
 }
 
+/**
+ * Better Auth returns an error object when the server answers and refuses, but it
+ * throws when the request never gets an answer at all — API not running, connection
+ * dropped, DNS gone. Both have to be handled or a failed submit leaves the button
+ * spinning forever with nothing said.
+ */
+export function describeThrownError(thrown: unknown): string {
+  const message = thrown instanceof Error ? thrown.message : undefined;
+  return describeAuthError({ status: 0, message });
+}
+
 export { apiUrl };

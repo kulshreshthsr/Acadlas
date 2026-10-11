@@ -2,16 +2,19 @@
 // person in it as owner, and makes it the school their session is working in —
 // which is what every other screen in every Acadlas product reads to decide whose
 // data it is allowed to show.
+//
+// The constellation beside the form takes the name as it is typed, so the step ends
+// with the school you just named sitting in front of you with its records attached.
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthLayout } from '../components/AuthLayout';
-import { SchoolStage } from '../components/SchoolStage';
+import { AuthShell } from '../components/AuthShell';
+import { RecordConstellation } from '../components/RecordConstellation';
 import { Field } from '../components/Field';
 import { FormError } from '../components/FormError';
 import { SubmitButton } from '../components/SubmitButton';
 import { StepMark } from '../components/StepMark';
-import { describeAuthError, organization } from '../lib/auth-client';
+import { describeAuthError, describeThrownError, organization } from '../lib/auth-client';
 import { isValidSlug, toSlug } from '../lib/slug';
 import { focusFirstError } from '../lib/form';
 import type { FieldErrors } from '../lib/form';
@@ -54,47 +57,45 @@ export function CreateSchool() {
     }
 
     setPending(true);
-    const { data, error } = await organization.create({
-      name: name.trim(),
-      slug: effectiveShortName,
-    });
+    try {
+      const { data, error } = await organization.create({
+        name: name.trim(),
+        slug: effectiveShortName,
+      });
 
-    if (error) {
+      if (error) {
+        setFormError(describeAuthError(error));
+        return;
+      }
+
+      // Make the new school the one this session is working in. Without this the
+      // session has no active school and every product screen would have nothing
+      // to scope its data to.
+      if (data?.id) {
+        await organization.setActive({ organizationId: data.id });
+      }
+
+      navigate('/app', { replace: true });
+    } catch (thrown) {
+      setFormError(describeThrownError(thrown));
+    } finally {
       setPending(false);
-      setFormError(describeAuthError(error));
-      return;
     }
-
-    // Make the new school the one this session is working in. Without this the
-    // session has no active school and every product screen would have nothing
-    // to scope its data to.
-    if (data?.id) {
-      await organization.setActive({ organizationId: data.id });
-    }
-
-    setPending(false);
-    navigate('/app', { replace: true });
   }
 
   return (
-    <AuthLayout
-      stage={
-        <SchoolStage
-          schoolName={name}
-          shortName={effectiveShortName}
-          caption="You can add more schools later and switch between them without signing out."
-        />
-      }
+    <AuthShell
+      navAction={{ prompt: 'Not your account?', label: 'Sign in', to: '/login' }}
+      stage={<RecordConstellation schoolName={name} shortName={effectiveShortName} />}
     >
       <StepMark step={2} of={2} />
 
-      <h1 className="mt-5">Add your school</h1>
-      <p className="lead mt-3">
-        Everything you record in Acadlas belongs to this school, and only people you
-        invite can see it.
+      <h1 className="mt-3.5">Add your school</h1>
+      <p className="mt-2 text-slate-600">
+        You can add more schools later and switch between them without signing out.
       </p>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         <FormError message={formError} />
 
         <Field
@@ -119,7 +120,7 @@ export function CreateSchool() {
           placeholder="greenfield"
           value={effectiveShortName}
           error={errors['short-name']}
-          hint="Used to identify your school across Acadlas. Lowercase letters, numbers and dashes."
+          hint="Identifies your school across Acadlas. Lowercase letters, numbers and dashes."
           onChange={(event) => {
             setShortNameEdited(true);
             setShortName(event.target.value.toLowerCase());
@@ -132,6 +133,6 @@ export function CreateSchool() {
           </SubmitButton>
         </div>
       </form>
-    </AuthLayout>
+    </AuthShell>
   );
 }

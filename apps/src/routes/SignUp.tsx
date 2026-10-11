@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthLayout } from '../components/AuthLayout';
-import { SchoolStage } from '../components/SchoolStage';
+import { AuthShell } from '../components/AuthShell';
+import { RecordConstellation } from '../components/RecordConstellation';
 import { Field } from '../components/Field';
 import { PasswordField, scorePassword } from '../components/PasswordField';
 import { FormError } from '../components/FormError';
 import { SubmitButton } from '../components/SubmitButton';
 import { StepMark } from '../components/StepMark';
-import { describeAuthError, signUp } from '../lib/auth-client';
+import { describeAuthError, describeThrownError, signUp } from '../lib/auth-client';
 import { focusFirstError } from '../lib/form';
 import type { FieldErrors } from '../lib/form';
 
@@ -48,35 +48,35 @@ export function SignUp() {
     }
 
     setPending(true);
-    const { error } = await signUp.email({
-      name: name.trim(),
-      email: email.trim(),
-      password,
-    });
-    setPending(false);
+    try {
+      const { error } = await signUp.email({ name: name.trim(), email: email.trim(), password });
 
-    if (error) {
-      setFormError(describeAuthError(error));
-      return;
+      if (error) {
+        setFormError(describeAuthError(error));
+        return;
+      }
+
+      navigate('/new-school', { replace: true });
+    } catch (thrown) {
+      setFormError(describeThrownError(thrown));
+    } finally {
+      setPending(false);
     }
-
-    navigate('/new-school', { replace: true });
   }
 
   return (
-    <AuthLayout
-      stage={
-        <SchoolStage caption="One account signs you in to every Acadlas product, for every school you belong to." />
-      }
+    <AuthShell
+      navAction={{ prompt: 'Already have an account?', label: 'Sign in', to: '/login' }}
+      stage={<RecordConstellation />}
     >
       <StepMark step={1} of={2} />
 
-      <h1 className="mt-5">Create your account</h1>
-      <p className="lead mt-3">
-        This is your personal login. You will add your school on the next screen.
+      <h1 className="mt-3.5">Create your account</h1>
+      <p className="mt-2 text-slate-600">
+        Your personal login. You'll add your school on the next screen.
       </p>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         <FormError message={formError} />
 
         <Field
@@ -121,12 +121,12 @@ export function SignUp() {
         </div>
       </form>
 
-      <p className="mt-7 text-[0.9375rem] text-slate-500">
-        Already have an account?{' '}
-        <Link className="font-semibold text-lagoon-600 underline-offset-4 hover:underline" to="/login">
-          Sign in
+      <p className="mt-5 border-t border-slate-100 pt-4 text-[0.8125rem] leading-relaxed text-slate-500">
+        Everything you record in Acadlas belongs to your school, and only people you invite can see it.{' '}
+        <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/login">
+          Sign in instead
         </Link>
       </p>
-    </AuthLayout>
+    </AuthShell>
   );
 }

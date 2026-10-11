@@ -1,14 +1,14 @@
-// Coming back. No stage, no pitch — two fields and the shortest path to the
-// school they were last working in.
+// Coming back. No stage — two fields and the shortest path to the school they
+// were last working in.
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthLayout } from '../components/AuthLayout';
+import { AuthShell } from '../components/AuthShell';
 import { Field } from '../components/Field';
 import { PasswordField } from '../components/PasswordField';
 import { FormError } from '../components/FormError';
 import { SubmitButton } from '../components/SubmitButton';
-import { describeAuthError, signIn } from '../lib/auth-client';
+import { describeAuthError, describeThrownError, signIn } from '../lib/auth-client';
 
 export function Login() {
   const navigate = useNavigate();
@@ -27,25 +27,30 @@ export function Login() {
     }
 
     setPending(true);
-    const { error } = await signIn.email({ email: email.trim(), password });
-    setPending(false);
+    try {
+      const { error } = await signIn.email({ email: email.trim(), password });
 
-    if (error) {
-      setFormError(describeAuthError(error));
-      return;
+      if (error) {
+        setFormError(describeAuthError(error));
+        return;
+      }
+
+      // Where they land depends on whether they have a school yet, which the route
+      // at "/" works out from the session.
+      navigate('/', { replace: true });
+    } catch (thrown) {
+      setFormError(describeThrownError(thrown));
+    } finally {
+      setPending(false);
     }
-
-    // Where they land depends on whether they have a school yet, which the route
-    // at "/" works out from the session.
-    navigate('/', { replace: true });
   }
 
   return (
-    <AuthLayout>
+    <AuthShell navAction={{ prompt: 'New to Acadlas?', label: 'Create an account', to: '/signup' }}>
       <h1>Sign in</h1>
-      <p className="lead mt-3">Use the email you set your Acadlas account up with.</p>
+      <p className="mt-2 text-slate-600">Use the email you set your Acadlas account up with.</p>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         <FormError message={formError} />
 
         <Field
@@ -75,12 +80,12 @@ export function Login() {
         </div>
       </form>
 
-      <p className="mt-7 text-[0.9375rem] text-slate-500">
+      <p className="mt-5 border-t border-slate-100 pt-4 text-[0.8125rem] text-slate-500">
         New to Acadlas?{' '}
-        <Link className="font-semibold text-lagoon-600 underline-offset-4 hover:underline" to="/signup">
+        <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/signup">
           Create an account
         </Link>
       </p>
-    </AuthLayout>
+    </AuthShell>
   );
 }
