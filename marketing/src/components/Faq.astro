@@ -4,27 +4,27 @@ import Icon from './Icon.astro';
 const faqs = [
   {
     q: 'Can our school use Acadlas School today?',
-    a: "Not yet. Acadlas School is in development and isn't for sale. This page shows what we're building and how it's meant to work.",
+    a: "Not yet. Acadlas School is in development and isn't available to schools. This page shows what we're building and how it's meant to work.",
+  },
+  {
+    q: 'What is in the prototype on this page?',
+    a: 'A small interactive illustration of admissions, attendance and fee recording, running on made-up sample data in your browser. It is not connected to a database, nothing you enter is saved or sent anywhere, and it resets when you reload the page.',
   },
   {
     q: 'Which schools is it for?',
-    a: 'Schools that run classes and sections, terms, attendance registers and fee instalments. Coaching institutes and colleges work differently, so they are planned as separate products: Acadlas Institute and Acadlas Campus.',
-  },
-  {
-    q: 'Do we have to buy every Acadlas product?',
-    a: 'No. Each product is meant to be used on its own. If you add another later, it connects to what you already have instead of starting from scratch.',
+    a: 'Schools that run classes and sections, terms, attendance registers and fee instalments.',
   },
   {
     q: 'Will teachers be able to use it on their phones?',
-    a: 'Yes, that is a design requirement from the start. Taking attendance, checking a class list or looking up a student should all work on an ordinary phone.',
+    a: 'That is a design requirement from the start. Taking attendance, checking a class list or looking up a student should all work on an ordinary phone. The prototype is a first look, not a finished mobile app.',
+  },
+  {
+    q: 'How will you keep our school’s records private?',
+    a: 'Keeping each school’s data separate, and limiting what each role can see, are design commitments for the build, to be enforced on the server. They are not finished or independently verified yet, so we do not claim them as working today.',
   },
   {
     q: 'How much will it cost?',
     a: "Pricing hasn't been announced yet.",
-  },
-  {
-    q: 'Is the demo on this page real?',
-    a: 'It runs the intended flows on sample data, entirely in your browser. Nothing you type is saved or sent anywhere.',
   },
 ];
 
@@ -39,7 +39,8 @@ const faqSchema = {
 <section id="faq" aria-labelledby="faq-title" class="bg-paper pb-[clamp(4.5rem,2.5rem+6vw,8.5rem)]">
   <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
     <div>
-      <h2 id="faq-title" class="text-[clamp(1.75rem,1.2rem+2vw,2.75rem)]">Questions schools ask</h2>
+      <p class="kicker">FAQ</p>
+      <h2 id="faq-title" class="mt-5 text-[clamp(1.75rem,1.2rem+2vw,2.75rem)]">Questions schools ask</h2>
     </div>
     <div class="flex flex-col gap-2.5">
       {

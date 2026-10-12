@@ -1,5 +1,6 @@
-// The "Try it" demo: attendance, fee payment and admission, running entirely in the browser
-// on sample data. Nothing is stored or sent.
+// The "Try it" prototype: attendance, fee payment and admission, running entirely in the browser
+// on made-up sample data. Nothing is stored or sent, so none of it survives a reload, and every
+// result it shows is labelled as a sample.
 
 const rupees = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -121,9 +122,8 @@ function mountAttendance(panel: HTMLElement) {
   panel.querySelector('[data-att-submit]')!.addEventListener('click', () => {
     const counts = refresh();
     const marked = buttons.filter((b) => b.dataset.status !== 'present');
-    const time = new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
-    summary.textContent = `${counts.present + counts.late} of ${buttons.length} in class at ${time}.${
-      marked.length ? ' Added to these students’ records:' : ' Full attendance today.'
+    summary.textContent = `${counts.present + counts.late} of ${buttons.length} in class in this sample register. Nothing was saved. In Acadlas School, ${
+      marked.length ? 'these marks would be added to each student’s own record:' : 'full attendance would be recorded for the class.'
     }`;
     list.replaceChildren(
       ...marked.map((b) => {
@@ -247,11 +247,11 @@ function mountFees(panel: HTMLElement) {
     const card = el('div', 'receipt-card relative mb-3 rounded-[var(--radius-lg)] border-t-4 border-marigold-500 bg-white p-4 shadow-lift ring-1 ring-slate-200');
     const top = el('div', 'flex items-start justify-between gap-3');
     const left1 = el('div');
-    left1.append(el('p', 'text-xs font-semibold text-slate-500', `Receipt ${receiptNo}`));
+    left1.append(el('p', 'text-xs font-semibold text-slate-500', `Sample receipt ${receiptNo}`));
     left1.append(el('p', 'text-2xl font-bold text-ink-800 [font-stretch:115%]', rupees.format(amount)));
     top.append(left1, el('span', 'rounded-full bg-lagoon-100 px-2.5 py-1 text-xs font-bold text-lagoon-700', method));
     card.append(top);
-    card.append(el('p', 'mt-2 border-t border-dashed border-slate-200 pt-2 text-sm text-slate-600', `Aarav Sharma, Class 6-B. Towards ${applied.join(' and ')}.`));
+    card.append(el('p', 'mt-2 border-t border-dashed border-slate-200 pt-2 text-sm text-slate-600', `Aarav Sharma, Class 6-B. Towards ${applied.join(' and ')}. Demo only, no real payment.`));
     receipts.prepend(card);
     if (!reduceMotion()) {
       card.animate(
@@ -325,6 +325,7 @@ function mountAdmission(panel: HTMLElement) {
     admissionNo++;
 
     const card = el('div', 'relative');
+    card.append(el('p', 'mb-3 inline-flex rounded-full bg-marigold-500 px-3 py-1 text-xs font-bold text-night', 'Sample record, not saved'));
     const head = el('div', 'flex items-center gap-3 rounded-2xl bg-white p-3.5');
     head.append(el('span', 'grid size-12 shrink-0 place-items-center rounded-2xl bg-marigold-500 font-extrabold text-night [font-stretch:115%]', initials));
     const who = el('div', 'min-w-0');
@@ -334,11 +335,11 @@ function mountAdmission(panel: HTMLElement) {
     card.append(head);
 
     const links: [string, string][] = [
-      ['Admission', `No. ${no}, admitted today`],
+      ['Admission', `Sample no. ${no}`],
       ['Guardian', `${guardian}, ${relation.toLowerCase()}`],
       ['Class', `${klass}-${section} class list, roll no. ${roll}`],
       ['Fee plan', `Class ${klass}, quarterly instalments`],
-      ['Attendance', `Added to the ${klass}-${section} register`],
+      ['Attendance', `Linked to the ${klass}-${section} register`],
     ];
     const ul = el('ul', 'mt-3 space-y-2 border-l-2 border-dashed border-lagoon-400/40 pl-4');
     links.forEach(([k, v], i) => {

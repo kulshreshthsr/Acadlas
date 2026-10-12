@@ -66,7 +66,7 @@ const satellites: Satellite[] = [
     key: 'fees',
     icon: 'fees',
     label: 'Fees',
-    values: ['Term 2: ₹6,500 due', 'Term 2: paid, receipt 1187'],
+    values: ['Term 2: ₹6,500 due', 'Term 2: marked as paid'],
     detail: [
       ['Fee plan', 'Class 6, quarterly'],
       ['Paid this year', '₹13,000 of ₹26,000'],
@@ -139,8 +139,8 @@ const scope: { icon: IconName; label: string }[] = [
       </h1>
 
       <p class="lead mt-7 max-w-[32rem] text-slate-300 motion-safe:animate-rise [animation-delay:700ms]">
-        Acadlas School brings admissions, classes, attendance and fees into one place. Enter a student once, and
-        their record follows them everywhere it's needed.
+        Acadlas School is being designed to bring admissions, classes, attendance and fees into one place. Enter a
+        student once, and their record follows them everywhere it's needed.
       </p>
 
       <div class="mt-9 flex flex-col gap-3 sm:flex-row motion-safe:animate-rise [animation-delay:850ms]">
@@ -148,7 +148,7 @@ const scope: { icon: IconName; label: string }[] = [
           See how it works
           <Icon name="arrow-down" size={18} />
         </a>
-        <a href="#try" class="btn btn-ghost">Try the demo</a>
+        <a href="#try" class="btn btn-ghost">Try the prototype</a>
       </div>
     </div>
 
@@ -180,8 +180,8 @@ const scope: { icon: IconName; label: string }[] = [
             <span class="orbit-detail">
               <span class="block">
                 <span class="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-[0.8125rem]">
-                  <span class="flex flex-col"><span class="text-slate-500">Date of birth</span><span class="font-semibold text-ink-800">14 Jan 2015</span></span>
-                  <span class="flex flex-col"><span class="text-slate-500">Linked records</span><span class="font-semibold text-ink-800">5</span></span>
+                  <span class="flex flex-col"><span class="text-slate-600">Date of birth</span><span class="font-semibold text-ink-800">14 Jan 2015</span></span>
+                  <span class="flex flex-col"><span class="text-slate-600">Linked records</span><span class="font-semibold text-ink-800">5</span></span>
                 </span>
               </span>
             </span>
@@ -237,7 +237,7 @@ const scope: { icon: IconName; label: string }[] = [
 
       <figcaption class="mt-4 flex items-center justify-center gap-2 text-sm text-slate-400 lg:mt-0">
         <Icon name="drag" size={16} class="text-lagoon-300" />
-        <span>Drag any card, or tap one to open it. Sample data.</span>
+        <span>Drag any card, or tap one to open it. Illustration with sample data.</span>
       </figcaption>
     </figure>
   </div>
@@ -245,7 +245,7 @@ const scope: { icon: IconName; label: string }[] = [
   <!-- What Acadlas School is being built to cover. -->
   <div class="relative border-t border-white/8">
     <div class="wrap py-5">
-      <p class="sr-only">Acadlas School is being built to cover:</p>
+      <p class="sr-only">Acadlas School is being designed to cover:</p>
       <ul class="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[0.9375rem] text-slate-300 lg:justify-between">
         {
           scope.map((item) => (

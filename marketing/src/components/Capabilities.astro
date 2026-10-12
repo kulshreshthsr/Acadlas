@@ -1,0 +1,180 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../data/icons';
+
+// What Acadlas School is being designed to manage. Written as intended scope, and each area says
+// whether this page shows it. Nothing here is a shipped feature.
+type Shown = 'prototype' | 'walkthrough' | 'planned';
+const shownLabel: Record<Shown, string> = {
+  prototype: 'In the prototype',
+  walkthrough: 'In the walkthrough',
+  planned: 'Planned',
+};
+
+const capabilities: { icon: IconName; title: string; shown: Shown; lead: string; points: string[] }[] = [
+  {
+    icon: 'admission',
+    title: 'Admissions',
+    shown: 'prototype',
+    lead: 'Bring a new student in without retyping anything later.',
+    points: [
+      'Student and guardian details captured in one form',
+      'An admission number and a record from day one',
+      'The student appears in their class straight away',
+    ],
+  },
+  {
+    icon: 'classes',
+    title: 'Classes and sections',
+    shown: 'walkthrough',
+    lead: 'Set up the academic structure once, then carry it forward.',
+    points: [
+      'Academic years, terms, classes, sections and subjects',
+      'Roll numbers and class teachers',
+      'Moving a student updates their class list and register',
+    ],
+  },
+  {
+    icon: 'attendance',
+    title: 'Attendance',
+    shown: 'prototype',
+    lead: 'A register teachers can mark from the classroom.',
+    points: [
+      'Present, absent and late, class by class',
+      'Designed for ordinary phones',
+      'Every absence kept on the student’s own record',
+    ],
+  },
+  {
+    icon: 'fees',
+    title: 'Fees',
+    shown: 'prototype',
+    lead: 'Know what is due, what is paid and what is left.',
+    points: [
+      'Fee plans by class, split into instalments',
+      'Payments, receipts and running balances',
+      'Fees tied to the same student as everything else',
+    ],
+  },
+  {
+    icon: 'staff',
+    title: 'Staff and roles',
+    shown: 'planned',
+    lead: 'The right people see the right things.',
+    points: [
+      'Teachers, office staff and principals',
+      'Class teachers assigned to their sections',
+      'Access that follows the role',
+    ],
+  },
+  {
+    icon: 'reports',
+    title: 'Reports',
+    shown: 'planned',
+    lead: 'Answers from the records already there.',
+    points: [
+      'Class lists and attendance summaries',
+      'Fees due and fees collected',
+      'Printable, so nothing is re-entered into a spreadsheet',
+    ],
+  },
+];
+
+// Commitments for the build. None of these is claimed as finished.
+const commitments: { icon: IconName; title: string; body: string }[] = [
+  {
+    icon: 'lock',
+    title: 'Each school’s data stays separate',
+    body: 'Acadlas School is designed so that one school can never see another school’s records.',
+  },
+  {
+    icon: 'staff',
+    title: 'Permissions checked on the server',
+    body: 'Access is meant to be enforced by the server, not just hidden on screen.',
+  },
+  {
+    icon: 'phone',
+    title: 'Made for everyday phones',
+    body: 'Registers get marked in classrooms, so every screen is designed for a phone first.',
+  },
+  {
+    icon: 'receipt',
+    title: 'A trail for important changes',
+    body: 'Fee receipts and admission edits are intended to record who changed what, and when.',
+  },
+];
+---
+
+<section id="capabilities" aria-labelledby="capabilities-title" class="section bg-paper">
+  <div class="wrap">
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
+      <div>
+        <p class="kicker">Core capabilities</p>
+        <h2 id="capabilities-title" class="mt-5">What Acadlas School is being designed to manage.</h2>
+      </div>
+      <p class="lead max-w-[30rem] lg:justify-self-end">
+        Six areas of everyday school administration, all built around the one student record. Each is marked with
+        where you can see it on this page.
+      </p>
+    </div>
+
+    <ul class="mt-12 grid border-t border-slate-300 sm:grid-cols-2 sm:gap-x-12 lg:grid-cols-3">
+      {
+        capabilities.map((c, i) => (
+          <li class="group border-b border-slate-300 py-8" data-reveal style={`--delay:${(i % 3) * 60}ms`}>
+            <div class="flex items-center justify-between gap-3">
+              <span class="grid size-11 place-items-center rounded-2xl bg-white text-lagoon-600 shadow-soft ring-1 ring-slate-200 transition-colors duration-300 group-hover:bg-ink-800 group-hover:text-marigold-400">
+                <Icon name={c.icon} size={21} />
+              </span>
+              <span
+                class:list={[
+                  'rounded-full px-2.5 py-1 text-xs font-bold [font-stretch:108%]',
+                  c.shown === 'planned' ? 'bg-slate-200 text-slate-700' : 'bg-lagoon-100 text-lagoon-700',
+                ]}
+              >
+                {shownLabel[c.shown]}
+              </span>
+            </div>
+            <h3 class="mt-5 text-xl sm:text-[1.375rem]">{c.title}</h3>
+            <p class="mt-2 text-[1.0625rem] leading-relaxed">{c.lead}</p>
+            <ul class="mt-4 space-y-2 text-[0.9375rem] leading-snug text-slate-600">
+              {
+                c.points.map((p) => (
+                  <li class="flex gap-2.5">
+                    <Icon name="check" size={16} class="mt-0.5 shrink-0 text-lagoon-600" />
+                    {p}
+                  </li>
+                ))
+              }
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-16 grid gap-8 rounded-[var(--radius-xl)] bg-ink-800 p-6 text-slate-300 sm:p-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-12 lg:p-10" data-surface="dark">
+      <div>
+        <h3 class="text-2xl">Design commitments</h3>
+        <p class="mt-3 max-w-[26rem]">
+          Software that holds a school’s records has to earn trust. These are the principles the build is following.
+          They are not features you can use today, and they are still being built and verified.
+        </p>
+      </div>
+      <ul class="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+        {
+          commitments.map((c) => (
+            <li class="flex gap-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-white/10 text-lagoon-300">
+                <Icon name={c.icon} size={19} />
+              </span>
+              <div>
+                <h4 class="text-base font-semibold text-white [font-stretch:110%]">{c.title}</h4>
+                <p class="mt-1 text-[0.9375rem] leading-snug">{c.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>

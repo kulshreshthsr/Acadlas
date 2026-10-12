@@ -5,15 +5,14 @@ import Hero from '../components/Hero.astro';
 import Why from '../components/Why.astro';
 import Workflow from '../components/Workflow.astro';
 import Playground from '../components/Playground.astro';
-import Ecosystem from '../components/Ecosystem.astro';
-import Foundations from '../components/Foundations.astro';
+import Capabilities from '../components/Capabilities.astro';
 import Faq from '../components/Faq.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
 
 const title = 'Acadlas School: school management software, in development';
 const description =
-  'Acadlas School is school management software in development. It brings admissions, classes, attendance and fees into one connected record for every student.';
+  'Acadlas School is school management software in development. It is being designed to connect admissions, classes, attendance and fees in one record for every student.';
 ---
 
 <Layout title={title} description={description}>
@@ -21,10 +20,12 @@ const description =
   <main id="main">
     <Hero />
     <Why />
-    <Workflow />
-    <Playground />
-    <Ecosystem />
-    <Foundations />
+    <!-- One navigation destination: the walkthrough of the workflow, then the prototype that demonstrates it. -->
+    <div id="how-it-works">
+      <Workflow />
+      <Playground />
+    </div>
+    <Capabilities />
     <Faq />
     <Closing />
   </main>

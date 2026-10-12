@@ -25,9 +25,8 @@ src/
 │   ├── Hero.astro             Headline, contour-map background, draggable record constellation
 │   ├── Why.astro              Pinned scroll scene: seven scraps of paper gather into one student record
 │   ├── Workflow.astro         Six-step flow with a sticky product window that fills a student record
-│   ├── Playground.astro       Working demo: attendance register, fee payment, admission (sample data)
-│   ├── Ecosystem.astro        Product map: School now, Institute and Campus planned, the rest explored
-│   ├── Foundations.astro      How the product is being built (data separation, roles, phones, audit)
+│   ├── Playground.astro       Illustrative prototype: attendance register, fee payment, admission (sample data)
+│   ├── Capabilities.astro     What the product is designed to manage, plus design commitments (not shipped features)
 │   ├── Faq.astro              Questions schools ask, with FAQPage structured data
 │   ├── Closing.astro          Closing message and calls to action
 │   ├── Footer.astro
@@ -59,11 +58,16 @@ src/
 
 Acadlas School is **in development**. The page describes intended scope only, so keep it free of availability,
 pricing, customer, testimonial or usage claims until they are true. Every name, figure and record on the page is
-illustrative sample data and is labelled as such. The ecosystem map says plainly that only Acadlas School is being
-built.
+illustrative sample data and is labelled as such. The prototype runs in the browser only: nothing is saved, sent or
+persisted, and it is labelled as a prototype wherever it shows a result. Security, privacy and mobile points are worded as
+design commitments until they are implemented and verified. The homepage promotes Acadlas School alone; do not add
+future products, a product map or bundling copy to it.
 
 The page links only to its own sections until a contact route exists. To add one, set `contactEmail` in
 `src/data/site.ts`; the closing section and footer then show an email action automatically.
+
+In `index.astro`, Workflow and Playground sit inside one `#how-it-works` wrapper, so the "How it works" nav item stays
+active across both and the header's "Try the prototype" button links to `#try` inside it.
 
 ## Production domain
 

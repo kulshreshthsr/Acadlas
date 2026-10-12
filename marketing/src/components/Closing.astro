@@ -13,11 +13,13 @@ const mailto = contactEmail
 
   <div class="wrap py-[clamp(6rem,4rem+8vw,11rem)] text-center">
     <h2 id="closing-title" class="mx-auto max-w-[56rem] text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.98]">
-      Built with schools, one workflow at a time.
+      One student. One record. One school.
     </h2>
     <p class="lead mx-auto mt-7 max-w-[38rem] text-slate-300">
-      We're starting with the jobs every school does daily: admissions, classes, attendance and fees. If you run or
-      work at a school, we'd like to hear how your day really goes.
+      Acadlas School is in development, starting with the jobs every school does daily: admissions, classes,
+      attendance and fees.{
+        mailto ? " If you run or work at a school, we'd like to hear how your day really goes." : ' The prototype above runs on sample data only.'
+      }
     </p>
     <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
       {
@@ -27,7 +29,7 @@ const mailto = contactEmail
           </a>
         ) : (
           <a href="#try" class="btn btn-sun">
-            Try the demo
+            Try the prototype
           </a>
         )
       }

@@ -113,12 +113,21 @@ export function mountConstellation(root: HTMLElement, pointerArea: HTMLElement) 
       node.w = node.el.offsetWidth;
       node.h = node.el.offsetHeight;
     }
-    const cfx = mobile ? center.mfx : center.fx;
     const cfy = mobile ? center.mfy : center.fy;
     for (const node of satellites) {
-      node.ox = ((mobile ? node.mfx : node.fx) - cfx) * W;
+      setOffsetX(node);
       node.oy = ((mobile ? node.mfy : node.fy) - cfy) * H;
     }
+  }
+
+  // Keep every card inside the stage. On narrow phones the cards are wider than their fractional
+  // slot allows, so their offsets are pulled in instead of letting them poke past the screen edge.
+  // Re-run whenever a card changes width, because its value text changes as the page idles.
+  function setOffsetX(node: OrbitNode) {
+    const cfx = mobile ? center.mfx : center.fx;
+    const homeX = cfx * W;
+    const ox = ((mobile ? node.mfx : node.fx) - cfx) * W;
+    node.ox = Math.min(Math.max(ox, node.w / 2 - homeX), W - node.w / 2 - homeX);
   }
 
   function centerHome() {
@@ -215,6 +224,7 @@ export function mountConstellation(root: HTMLElement, pointerArea: HTMLElement) 
     new ResizeObserver(() => {
       node.w = node.el.offsetWidth;
       node.h = node.el.offsetHeight;
+      if (!node.isCenter) setOffsetX(node);
     }).observe(node.el);
   }
 

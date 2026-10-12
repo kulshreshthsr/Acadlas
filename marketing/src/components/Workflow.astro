@@ -77,7 +77,7 @@ const feePlan = [
 ];
 ---
 
-<section id="how-it-works" aria-labelledby="how-title" data-surface="dark" class="relative bg-night" data-flow data-screens={JSON.stringify(steps.map((s) => s.screen))}>
+<section aria-labelledby="how-title" data-surface="dark" class="relative bg-night" data-flow data-screens={JSON.stringify(steps.map((s) => s.screen))}>
   <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_40%_at_80%_20%,rgb(20_152_155/0.18),transparent_70%),radial-gradient(40%_30%_at_0%_80%,rgb(31_111_178/0.18),transparent_70%)]"></div>
 
   <div class="wrap relative pt-24 sm:pt-32">
@@ -85,7 +85,7 @@ const feePlan = [
       <p class="kicker">How it works</p>
       <h2 id="how-title" class="mt-5">From setup to fee receipt, in one flow.</h2>
       <p class="lead mt-6 max-w-[36rem] text-slate-300">
-        Six steps, each building on the last. Watch one student's record fill up as you scroll.
+        The intended workflow, in six steps that each build on the last. Scroll to watch one made-up student's record fill up.
       </p>
     </div>
 
@@ -96,7 +96,7 @@ const feePlan = [
           <div class="window-bar justify-between">
             <span class="flex items-center gap-1.5"><i class="size-2.5 rounded-full bg-slate-200"></i><i class="size-2.5 rounded-full bg-slate-200"></i><i class="size-2.5 rounded-full bg-slate-200"></i></span>
             <span class="label text-ink-800" data-flow-title>{steps[0].screen}</span>
-            <span class="label text-slate-500">Sample</span>
+            <span class="label text-slate-500">Sample data</span>
           </div>
 
           <div class="relative h-[13.5rem] overflow-hidden bg-slate-50 sm:h-[19rem] lg:h-[22rem]">
@@ -158,8 +158,8 @@ const feePlan = [
                 <p class="label col-span-2 -mb-1 text-slate-500 max-sm:hidden">Student and guardian, in one form</p>
                 <label class="field"><span>Student</span><span><span class="anim-type inline-block">Aarav Sharma</span></span></label>
                 <label class="field"><span>Guardian</span><span><span class="anim-type inline-block" style="--d:500ms">Neha Sharma</span></span></label>
-                <label class="field"><span>Class</span><span><span class="anim-type inline-block" style="--d:300ms">6</span></span></label>
-                <label class="field"><span>Phone</span><span><span class="anim-type inline-block" style="--d:800ms">98xxx xx210</span></span></label>
+                <label class="field max-sm:hidden"><span>Class</span><span><span class="anim-type inline-block" style="--d:300ms">6</span></span></label>
+                <label class="field max-sm:hidden"><span>Phone</span><span><span class="anim-type inline-block" style="--d:800ms">98xxx xx210</span></span></label>
               </div>
               <div class="anim-rise mt-4 flex items-center gap-3 rounded-lg bg-lagoon-50 p-3 text-sm ring-1 ring-lagoon-200" style="--d:1200ms">
                 <span class="grid size-7 shrink-0 place-items-center rounded-full bg-lagoon-500 text-white"><Icon name="check" size={15} /></span>
@@ -257,13 +257,13 @@ const feePlan = [
           <!-- The record filling up. -->
           <div class="flex items-center gap-2 overflow-hidden border-t border-slate-100 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
             <span class="grid size-7 shrink-0 place-items-center rounded-lg bg-marigold-500 text-[0.6875rem] font-extrabold text-night">AS</span>
-            <ul class="flex min-w-0 flex-1 gap-1.5 overflow-hidden" data-flow-chips>
+            <ul class="flow-chips flex min-w-0 flex-1 gap-1.5 overflow-hidden" data-flow-chips>
               {
                 steps.map((s, i) => (
                   <li
                     data-chip={i}
                     data-on={i === 0 ? 'true' : 'false'}
-                    class="flow-chip flex shrink-0 items-center gap-1 rounded-full bg-lagoon-50 px-2.5 py-1 text-[0.6875rem] font-semibold whitespace-nowrap text-lagoon-700 sm:text-xs"
+                    class="flow-chip flex shrink-0 data-[on=false]:hidden items-center gap-1 rounded-full bg-lagoon-50 px-2.5 py-1 text-[0.6875rem] font-semibold whitespace-nowrap text-lagoon-700 sm:text-xs"
                   >
                     <Icon name={s.icon} size={13} />
                     {s.chip}
@@ -329,7 +329,19 @@ const feePlan = [
       if (chipList && chip) {
         chipList.scrollTo({ left: Math.max(0, chip.offsetLeft + chip.offsetWidth - chipList.clientWidth), behavior: 'smooth' });
       }
+      markFades();
+      // The new chip pops in over about half a second, which changes the strip's width as it settles.
+      window.setTimeout(markFades, 650);
     };
+
+    // The strip clips on purpose; a soft fade on the clipped side shows there is more instead of cutting a chip off.
+    const markFades = () => {
+      if (!chipList) return;
+      const max = chipList.scrollWidth - chipList.clientWidth;
+      chipList.dataset.fadeStart = String(chipList.scrollLeft > 1);
+      chipList.dataset.fadeEnd = String(chipList.scrollLeft < max - 1);
+    };
+    chipList?.addEventListener('scroll', markFades, { passive: true });
 
     const update = () => {
       queued = false;
@@ -356,6 +368,7 @@ const feePlan = [
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+    window.addEventListener('resize', markFades);
     update();
   }
 </script>

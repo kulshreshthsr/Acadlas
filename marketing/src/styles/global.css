@@ -105,7 +105,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 6rem;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -449,8 +449,17 @@
     transition-delay: 0s;
   }
 
-  .flow-chip[data-on="false"] {
-    display: none;
+  /* The chip strip clips by design. A fade on whichever side is clipped keeps it from looking cut off. */
+  .flow-chips[data-fade-end="true"] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+  }
+
+  .flow-chips[data-fade-start="true"] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
+  }
+
+  .flow-chips[data-fade-start="true"][data-fade-end="true"] {
+    mask-image: linear-gradient(to right, transparent, #000 1.75rem, #000 calc(100% - 1.75rem), transparent);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -523,115 +532,6 @@
     outline: none;
     border-color: var(--color-cobalt-500);
     box-shadow: 0 0 0 3px rgb(31 111 178 / 0.18);
-  }
-}
-
-/* Ecosystem map nodes and status pills. */
-@layer components {
-  .eco-node {
-    position: absolute;
-    translate: -50% -50%;
-    display: grid;
-    place-items: center;
-    min-height: 2.25rem;
-    padding: 0 0.75rem;
-    border-radius: 999px;
-    border: 1.5px dashed rgb(154 170 191 / 0.55);
-    background: rgb(7 27 53 / 0.85);
-    color: var(--color-slate-200);
-    font-size: 0.75rem;
-    font-weight: 650;
-    font-stretch: 110%;
-    white-space: nowrap;
-    cursor: pointer;
-    transition:
-      transform 0.35s var(--ease-spring),
-      background-color 0.25s ease,
-      border-color 0.25s ease,
-      color 0.25s ease;
-  }
-
-  .eco-node:hover {
-    transform: scale(1.08);
-  }
-
-  .eco-node[aria-pressed="true"] {
-    border-style: solid;
-    border-color: var(--color-white);
-    background: var(--color-white);
-    color: var(--color-ink-900);
-  }
-
-  .eco-node[data-status="planned"] {
-    min-height: 2.75rem;
-    padding: 0 1rem;
-    border: 1.5px solid var(--color-lagoon-300);
-    background: rgb(12 117 121 / 0.35);
-    color: var(--color-white);
-    font-size: 0.8125rem;
-  }
-
-  .eco-node[data-status="planned"][aria-pressed="true"] {
-    background: var(--color-lagoon-300);
-    color: var(--color-night);
-  }
-
-  .eco-node[data-status="now"] {
-    width: 5.25rem;
-    height: 5.25rem;
-    padding: 0;
-    border: 0;
-    background: var(--color-marigold-500);
-    color: var(--color-night);
-    font-size: 0.9375rem;
-    font-weight: 780;
-    font-stretch: 118%;
-    box-shadow: 0 0 0 8px rgb(244 166 42 / 0.14), 0 0 60px -6px rgb(244 166 42 / 0.65);
-  }
-
-  .eco-node[data-status="now"][aria-pressed="true"] {
-    box-shadow: 0 0 0 8px rgb(244 166 42 / 0.25), 0 0 0 10px var(--color-white), 0 0 70px -6px rgb(244 166 42 / 0.8);
-  }
-
-  @media (min-width: 40rem) {
-    .eco-node {
-      min-height: 2.5rem;
-      padding: 0 1rem;
-      font-size: 0.875rem;
-    }
-
-    .eco-node[data-status="planned"] {
-      min-height: 3rem;
-      padding: 0 1.25rem;
-      font-size: 0.9375rem;
-    }
-
-    .eco-node[data-status="now"] {
-      width: 8.5rem;
-      height: 8.5rem;
-      font-size: 1.375rem;
-    }
-  }
-
-  .eco-pill {
-    display: inline-flex;
-    border-radius: 999px;
-    padding: 0.25rem 0.7rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    font-stretch: 108%;
-    background: rgb(255 255 255 / 0.1);
-    color: var(--color-slate-200);
-  }
-
-  .eco-pill[data-status="now"] {
-    background: var(--color-marigold-500);
-    color: var(--color-night);
-  }
-
-  .eco-pill[data-status="planned"] {
-    background: rgb(47 180 178 / 0.2);
-    color: var(--color-lagoon-300);
   }
 }
 

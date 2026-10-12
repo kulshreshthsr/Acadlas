@@ -2,8 +2,8 @@
 export const navLinks = [
   { label: 'Why Acadlas', href: '#why' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Try it', href: '#try' },
-  { label: 'Ecosystem', href: '#ecosystem' },
+  { label: 'Capabilities', href: '#capabilities' },
+  { label: 'FAQ', href: '#faq' },
 ] as const;
 
 // Where pilot-school enquiries go. Leave empty until the Acadlas inbox exists:

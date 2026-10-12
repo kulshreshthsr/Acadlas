@@ -1,8 +1,8 @@
 ---
 import Icon from './Icon.astro';
 
-// A small, working sample of three Acadlas School tasks. Everything runs in the browser
-// on made-up data; nothing is sent anywhere.
+// An illustrative prototype of three Acadlas School tasks. Everything runs in the browser on
+// made-up sample data; nothing is stored or sent, and a reload resets it.
 const students = [
   'Aarav Sharma',
   'Advik Rao',
@@ -34,15 +34,23 @@ const tabs = [
   <div class="wrap">
     <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
       <div>
-        <p class="kicker">Try it</p>
-        <h2 id="try-title" class="mt-5">Have a go. It's the real flow, with pretend data.</h2>
+        <p class="kicker">Interactive prototype</p>
+        <h2 id="try-title" class="mt-5">Try three everyday jobs on sample data.</h2>
       </div>
       <p class="lead max-w-[30rem] lg:justify-self-end">
-        Three everyday jobs from the school office and the classroom. Nothing you enter leaves this page.
+        A first look at how admissions, attendance and fees are meant to feel, from the school office and the classroom.
       </p>
     </div>
 
-    <div class="mt-12">
+    <p class="mt-8 flex max-w-[48rem] items-start gap-3 rounded-[var(--radius-lg)] bg-lagoon-50 p-4 text-[0.9375rem] leading-snug text-ink-800 ring-1 ring-lagoon-200" data-play-note>
+      <Icon name="sparkle" size={18} class="mt-0.5 shrink-0 text-lagoon-600" />
+      <span>
+        <b>Illustrative prototype.</b> Everything here is made-up sample data that stays in this browser tab. It is not
+        connected to a school database, nothing is saved or sent, and reloading the page resets it.
+      </span>
+    </p>
+
+    <div class="mt-8">
       <div role="tablist" aria-label="Demo tasks" class="inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-white p-1.5 shadow-soft ring-1 ring-slate-200" data-tabs>
         {
           tabs.map((tab, i) => (
@@ -108,7 +116,7 @@ const tabs = [
 
           <aside class="flex flex-col rounded-[var(--radius-xl)] bg-ink-800 p-5 text-slate-300 sm:p-6" data-surface="dark" aria-label="Register summary">
             <div data-att-open>
-              <p class="label text-slate-400">Today so far</p>
+              <p class="label text-slate-400">Sample register summary</p>
               <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
                 <div class="rounded-xl bg-white/5 py-3"><dt class="text-xs">Present</dt><dd class="text-2xl font-bold text-white [font-stretch:115%]" data-att-count="present">12</dd></div>
                 <div class="rounded-xl bg-white/5 py-3"><dt class="text-xs">Absent</dt><dd class="text-2xl font-bold text-white [font-stretch:115%]" data-att-count="absent">0</dd></div>
@@ -119,12 +127,12 @@ const tabs = [
                 <span class="h-full bg-marigold-400 transition-[width] duration-500" data-att-bar="late" style="width:0%"></span>
                 <span class="h-full bg-coral-500 transition-[width] duration-500" data-att-bar="absent" style="width:0%"></span>
               </div>
-              <button type="button" class="btn btn-sun mt-6 w-full" data-att-submit>Submit register</button>
+              <button type="button" class="btn btn-sun mt-6 w-full" data-att-submit>Submit sample register</button>
             </div>
 
             <div class="hidden" data-att-done>
               <span class="grid size-12 place-items-center rounded-full bg-lagoon-500 text-white motion-safe:animate-[tick-in_0.5s_var(--ease-spring)_both]"><Icon name="check" size={24} /></span>
-              <p class="mt-4 text-xl font-bold text-white [font-stretch:115%]">Register submitted</p>
+              <p class="mt-4 text-xl font-bold text-white [font-stretch:115%]">Sample register submitted</p>
               <p class="mt-2 text-sm" data-att-summary></p>
               <ul class="mt-4 space-y-1.5 text-sm" data-att-list></ul>
               <button type="button" class="btn btn-ghost mt-6 w-full" data-att-edit>Edit register</button>
@@ -142,7 +150,7 @@ const tabs = [
               <span class="grid size-12 place-items-center rounded-2xl bg-marigold-500 font-extrabold text-night [font-stretch:115%]">AS</span>
               <div>
                 <h3>Aarav Sharma</h3>
-                <p class="text-sm text-slate-600">Class 6-B, fee plan for 2026–27</p>
+                <p class="text-sm text-slate-600">Sample student, Class 6-B, fee plan for 2026–27</p>
               </div>
             </div>
 
@@ -174,7 +182,7 @@ const tabs = [
 
           <div class="flex flex-col gap-4">
             <form class="rounded-[var(--radius-xl)] bg-ink-800 p-5 text-slate-300 sm:p-6" data-surface="dark" data-fee-form novalidate>
-              <h3>Record a payment</h3>
+              <h3>Record a sample payment</h3>
               <label class="mt-4 block">
                 <span class="text-sm font-medium">Amount received (₹)</span>
                 <input
@@ -204,13 +212,13 @@ const tabs = [
                   }
                 </div>
               </fieldset>
-              <button type="submit" class="btn btn-sun mt-5 w-full">Record payment</button>
+              <button type="submit" class="btn btn-sun mt-5 w-full">Record sample payment</button>
               <button type="button" class="mt-3 w-full text-center text-sm text-slate-400 underline-offset-4 hover:text-white hover:underline" data-fee-reset>Start over</button>
             </form>
 
             <div class="relative min-h-[8.5rem] overflow-hidden" data-fee-receipts aria-live="polite">
               <p class="flex h-full min-h-[8.5rem] items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-slate-300 px-6 text-center text-sm text-slate-500" data-fee-empty>
-                Receipts you issue will appear here.
+                Sample receipts will appear here. No real payment is taken.
               </p>
             </div>
           </div>
@@ -222,7 +230,7 @@ const tabs = [
         <div class="grid gap-4 lg:grid-cols-2">
           <form class="rounded-[var(--radius-xl)] bg-white p-4 shadow-lift ring-1 ring-slate-200 sm:p-6" data-admit-form novalidate>
             <h3>New admission</h3>
-            <p class="text-sm text-slate-600">Student and guardian in one form.</p>
+            <p class="text-sm text-slate-600">Student and guardian in one form, with sample details.</p>
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
               <label class="sm:col-span-2">
                 <span class="text-sm font-semibold text-ink-800">Student's full name</span>
@@ -242,7 +250,7 @@ const tabs = [
               </label>
               <label>
                 <span class="text-sm font-semibold text-ink-800">Guardian's name</span>
-                <input name="guardian" value="Rohit Verma" autocomplete="off" class="admit-input" />
+                <input name="guardian" value="Rohit Verma" autocomplete="off" aria-describedby="admit-error" class="admit-input" />
               </label>
               <label>
                 <span class="text-sm font-semibold text-ink-800">Relation</span>
@@ -252,13 +260,13 @@ const tabs = [
               </label>
             </div>
             <p id="admit-error" class="mt-3 min-h-5 text-sm font-medium text-coral-700" data-admit-error></p>
-            <button type="submit" class="btn btn-ink mt-2 w-full sm:w-auto">Admit student</button>
+            <button type="submit" class="btn btn-ink mt-2 w-full sm:w-auto">Admit sample student</button>
           </form>
 
           <div class="relative overflow-hidden rounded-[var(--radius-xl)] bg-night p-5 sm:p-6" data-surface="dark" aria-live="polite" data-admit-out>
             <div class="flex h-full min-h-[18rem] flex-col items-center justify-center text-center" data-admit-empty>
               <span class="grid size-14 place-items-center rounded-2xl bg-white/5 text-lagoon-300"><Icon name="link" size={26} /></span>
-              <p class="mt-4 max-w-[20rem] text-slate-300">Admit the student and their record appears here, already connected to class, guardian, fees and attendance.</p>
+              <p class="mt-4 max-w-[20rem] text-slate-300">Admit the sample student and their record appears here, linked to class, guardian, fees and attendance. Nothing is saved.</p>
             </div>
           </div>
         </div>
