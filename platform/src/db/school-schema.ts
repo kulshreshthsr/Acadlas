@@ -70,6 +70,13 @@ export const schoolProfile = pgTable('school_profile', {
   workingDays: smallint('working_days').default(0b0111111).notNull(),
   admissionPrefix: text('admission_prefix').default('ADM').notNull(),
   receiptPrefix: text('receipt_prefix').default('RCT').notNull(),
+  /** The fee head late fees are booked under. The school can rename it; it is created on first use. */
+  lateFeeHead: text('late_fee_head').default('Late fee').notNull(),
+  /** The fee head a bank's returned-cheque charge is booked under. */
+  bankChargeHead: text('bank_charge_head').default('Bank charges').notNull(),
+  /** What a returned cheque / transfer costs by default, in paise. 0 means no charge unless one is entered. */
+  bankChargeCheque: integer('bank_charge_cheque').default(0).notNull(),
+  bankChargeTransfer: integer('bank_charge_transfer').default(0).notNull(),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -419,6 +426,18 @@ export const feePlan = pgTable(
       .notNull()
       .references(() => academicYear.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    /**
+     * The plan's late-fee policy. `flat` is charged once; `daily`, `weekly` and `monthly` repeat
+     * for every such period past the grace days. The fee is `fineAmount` paise, or when
+     * `fineBasis` is 'percent', `fineRate` basis points (150 = 1.5%) of the instalment's amount.
+     * `fineCap` is a ceiling per instalment in paise; 0 means no ceiling.
+     */
+    fineMode: text('fine_mode', { enum: ['none', 'flat', 'daily', 'weekly', 'monthly'] }).default('none').notNull(),
+    fineBasis: text('fine_basis', { enum: ['amount', 'percent'] }).default('amount').notNull(),
+    fineAmount: integer('fine_amount').default(0).notNull(),
+    fineRate: integer('fine_rate').default(0).notNull(),
+    fineGraceDays: smallint('fine_grace_days').default(0).notNull(),
+    fineCap: integer('fine_cap').default(0).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -521,12 +540,15 @@ export const feeCharge = pgTable(
     amount: integer('amount').notNull(),
     concession: integer('concession').default(0).notNull(),
     concessionNote: text('concession_note'),
+    /** Set on a late fee: the instalment it was charged for. One per student per instalment. */
+    fineForInstalmentId: text('fine_for_instalment_id').references(() => feeInstalment.id, { onDelete: 'cascade' }),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     uniqueIndex('fee_charge_student_line_uq').on(t.studentId, t.lineId).where(sql`${t.lineId} is not null`),
+    uniqueIndex('fee_charge_student_fine_uq').on(t.studentId, t.fineForInstalmentId).where(sql`${t.fineForInstalmentId} is not null`),
     index('fee_charge_school_due_idx').on(t.schoolId, t.dueOn),
     index('fee_charge_student_idx').on(t.studentId),
   ],
@@ -549,7 +571,9 @@ export const payment = pgTable(
     note: text('note'),
     receivedBy: text('received_by').references(() => user.id, { onDelete: 'set null' }),
     receivedByName: text('received_by_name'),
-    status: text('status', { enum: ['valid', 'cancelled'] }).default('valid').notNull(),
+    status: text('status', { enum: ['valid', 'cancelled', 'bounced'] }).default('valid').notNull(),
+    bouncedOn: day('bounced_on'),
+    bounceReason: text('bounce_reason'),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     cancelledByName: text('cancelled_by_name'),
     cancelReason: text('cancel_reason'),
@@ -560,6 +584,24 @@ export const payment = pgTable(
     index('payment_school_paid_idx').on(t.schoolId, t.paidOn),
     index('payment_student_idx').on(t.studentId),
   ],
+);
+
+/** A day's collection signed off, with the cash actually counted. While a row exists, nothing dated that day can change. */
+export const feeDayClose = pgTable(
+  'fee_day_close',
+  {
+    id: id(),
+    schoolId: schoolId(),
+    day: day('day').notNull(),
+    expectedCash: integer('expected_cash').notNull(),
+    countedCash: integer('counted_cash').notNull(),
+    variance: integer('variance').notNull(),
+    note: text('note'),
+    closedBy: text('closed_by').references(() => user.id, { onDelete: 'set null' }),
+    closedByName: text('closed_by_name'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('fee_day_close_school_day_uq').on(t.schoolId, t.day)],
 );
 
 export const paymentAllocation = pgTable(
