@@ -16,7 +16,7 @@ export function ContourField() {
     if (!canvas) return;
     // The pointer area is the whole page, so the hill follows the cursor even while
     // someone is filling in the form.
-    mountContours(canvas, document.documentElement);
+    return mountContours(canvas, document.documentElement);
   }, []);
 
   return (

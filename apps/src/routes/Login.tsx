@@ -2,7 +2,7 @@
 // were last working in.
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthShell } from '../components/AuthShell';
 import { Field } from '../components/Field';
 import { PasswordField } from '../components/PasswordField';
@@ -12,6 +12,8 @@ import { describeAuthError, describeThrownError, signIn } from '../lib/auth-clie
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const justReset = Boolean((location.state as { reset?: boolean } | null)?.reset);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -51,6 +53,11 @@ export function Login() {
       <p className="mt-2 text-slate-600">Use the email you set your Acadlas account up with.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+        {justReset && !formError && (
+          <p role="status" className="rounded-md bg-lagoon-50 px-3.5 py-3 text-[0.9375rem] font-medium text-lagoon-700">
+            Your password has been changed. Sign in with the new one.
+          </p>
+        )}
         <FormError message={formError} />
 
         <Field
@@ -72,6 +79,11 @@ export function Login() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        <p className="-mt-2 text-right text-[0.8125rem]">
+          <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/forgot-password">
+            Forgot your password?
+          </Link>
+        </p>
 
         <div className="pt-1">
           <SubmitButton pending={pending} pendingLabel="Signing in">

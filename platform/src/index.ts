@@ -1,43 +1,32 @@
-// The Acadlas platform API. Right now this is just shared auth (sign up, log in, organizations),
-// but every future product (Acadlas School today, others later) mounts its own routes here too —
-// this stays one deployable backend until there's a real reason to split it up.
+// The Acadlas platform API, running under Node — for development, and for any Node host.
 //
-// Runs under plain Node for local development (this file, via `npm run dev`) and will run
-// unchanged on Cloudflare Workers once deployed — `auth` and the route handlers don't know or
-// care which runtime they're on, which is the point of building on Hono + the Neon HTTP driver.
+// Reads .env.local, opens the database (Neon, or a local PGlite folder — see src/db/index.ts),
+// builds auth and the app around it, and serves on PORT (8787 by default).
 import './env';
 
 import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { auth } from './auth';
+import { createApp } from './app';
+import { createAuth } from './auth';
+import { getDatabaseUrl, isLocalDatabase, openDatabase } from './db';
 
-const app = new Hono();
+// The browser app runs on an origin of its own — a different port in development, a
+// different subdomain in production. Better Auth and CORS read the same list, so the two
+// can never drift apart and leave the app rejected by one but allowed by the other.
+const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',').map((o) => o.trim());
 
-// Local dev only: lets the React app (running on its own port) call this API and send/receive
-// the session cookie. In production, the frontend and this API should share a parent domain
-// (e.g. `school.acadlas.com` calling `api.acadlas.com`), configured here before deploying.
-const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',');
-
-app.use(
-  '/api/auth/*',
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  }),
-);
-
-// Every Better Auth endpoint (sign-up, sign-in, sessions, organizations, invitations, ...)
-// lives under this one path. See https://www.better-auth.com/docs/concepts/api for the full list.
-app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
-
-app.get('/health', (c) => c.json({ ok: true }));
+const url = getDatabaseUrl();
+const db = await openDatabase(url);
+const auth = createAuth({
+  db,
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: origins,
+});
+const app = createApp({ db, auth, origins });
 
 const port = Number(process.env.PORT ?? 8787);
 
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`Acadlas platform API running at http://localhost:${info.port}`);
-  console.log(`Auth endpoints at          http://localhost:${info.port}/api/auth/*`);
+  console.log(`Database: ${isLocalDatabase(url) ? `local (${url})` : 'Neon'}`);
 });

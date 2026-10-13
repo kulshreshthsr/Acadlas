@@ -28,6 +28,9 @@ const friendlyMessages: Record<string, string> = {
   PASSWORD_TOO_SHORT: 'Use at least 8 characters.',
   ORGANIZATION_ALREADY_EXISTS: 'A school with this short name already exists. Try another.',
   SLUG_IS_TAKEN: 'That short name is taken. Try another.',
+  INVALID_TOKEN: 'This link has expired or was already used. Ask for a new one.',
+  INVITATION_NOT_FOUND: 'This invitation no longer exists. Ask the school for a new one.',
+  YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION: 'This invitation was sent to a different email address.',
 };
 
 type AuthError = {

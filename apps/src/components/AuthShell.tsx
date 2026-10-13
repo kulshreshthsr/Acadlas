@@ -71,7 +71,7 @@ export function AuthShell({ children, stage, navAction }: AuthShellProps) {
       {/* The same strip the website runs under its hero. */}
       <footer className="relative z-10 border-t border-white/10">
         <div className="wrap flex flex-wrap items-center justify-center gap-x-7 gap-y-2 py-4 text-[0.8125rem] text-slate-400 lg:justify-between">
-          <span className="hidden font-medium text-slate-300 lg:inline">Acadlas School is being built to cover:</span>
+          <span className="hidden font-medium text-slate-300 lg:inline">Acadlas School covers:</span>
           {covers.map((item) => (
             <span key={item.label} className="flex items-center gap-2">
               <Icon name={item.icon} size={15} className="text-lagoon-300" />

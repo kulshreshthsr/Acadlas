@@ -1,75 +1,51 @@
-# React + TypeScript + Vite
+# Acadlas apps
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The browser app for Acadlas School: sign-up and sign-in, creating a school, first-time setup, and
+everything inside — Today, students, classes, attendance, fees, staff, reports and settings.
 
-Currently, two official plugins are available:
+React 19 + TypeScript + Vite, Tailwind CSS 4, React Router, TanStack Query, Better Auth's client.
+It talks to the platform API (`../platform`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```powershell
+npm install
+Copy-Item .env.local.example .env.local   # only needed if the API is not on localhost:8787
+npm run dev                               # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## What's here
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+├── App.tsx                 Every route, and which roles may open it.
+├── components/
+│   ├── AppShell.tsx        The masthead (the school's own contour map), navigation, school
+│   │                       switcher, account menu and the phone tab bar.
+│   ├── CommandPalette.tsx  "/" or Ctrl+K: find a student by name, admission no. or a parent's
+│   │                       phone, a receipt, a colleague — or jump to a common job.
+│   └── ui.tsx              Page, Card, Dialog, fields, toasts and the rest of the vocabulary.
+├── lib/
+│   ├── api.ts              fetch wrapper, errors, the query client.
+│   ├── school.ts           Who is signed in, which school, what their role allows.
+│   ├── format.ts           ₹ in lakh grouping, dates, phone numbers, WhatsApp links.
+│   └── csv.ts              Excel-friendly export and import.
+└── routes/
+    ├── Login, SignUp, CreateSchool, PasswordReset, Invite
+    └── app/                Today, Setup, Students, Admit, ImportStudents, StudentRecord,
+                            LeavingCertificate, Classes, Promote, Attendance, Register,
+                            AttendanceMonth, Fees, Collect, FeePlans, Receipt, Staff, Reports,
+                            Settings
 ```
+
+Each screen under `routes/app` is loaded the first time it is opened, so a teacher on a slow
+phone connection downloads the register, not the fee plan editor.
+
+## Commands
+
+| Command           | Action                                  |
+| :---------------- | :-------------------------------------- |
+| `npm run dev`     | Dev server at `localhost:5173`          |
+| `npm run build`   | Type-check and build to `dist/`         |
+| `npm run lint`    | ESLint                                  |
+| `npm run preview` | Serve the built app locally             |

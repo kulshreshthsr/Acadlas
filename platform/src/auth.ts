@@ -6,67 +6,128 @@
 // Acadlas is an organization. A user can belong to more than one (a parent with two kids at
 // two different schools; a teacher who consults for two schools), and switches between them
 // without logging out. Every product route checks the active organization on the session
-// before touching any data — that check is what keeps one school from ever seeing another's.
-
-// Must stay the first import — see src/env.ts for why. Needed here so DATABASE_URL and
-// BETTER_AUTH_SECRET exist whether this file is loaded by the running server (src/index.ts)
-// or standalone by the Better Auth CLI (`npm run auth:generate`, which only loads this file).
-import './env';
-
+// before touching any data — see src/school/tenant.ts, which is where that check lives.
+//
+// This file builds the auth instance from a database handle instead of opening one itself,
+// so the server, the local mode and the tests can each hand it the database they use.
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization } from 'better-auth/plugins';
-import { db, schema } from './db';
+import { and, eq, isNull } from 'drizzle-orm';
+import { schema } from './db';
+import type { Db } from './db';
+import { schoolProfile, staff } from './db/school-schema';
+import { appUrl, sendMail } from './lib/mailer';
+import { ac, authRoles, roleLabels } from './school/roles';
+import type { SchoolRole } from './school/roles';
 
-// The browser app runs on an origin of its own — a different port in development,
-// a different subdomain in production. Better Auth refuses any sign-in request from
-// an origin it has not been told about, so this list has to include the frontend.
-// It reads the same variable the CORS middleware does (see src/index.ts), so the two
-// can never drift apart and leave the app rejected by one but allowed by the other.
-const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',');
+type AuthOptions = {
+  db: Db;
+  secret?: string;
+  baseURL?: string;
+  trustedOrigins: string[];
+};
 
-export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema,
-  }),
-
-  // Email + password only for now. Google/Microsoft sign-in can be added later without
-  // touching anything else, since Better Auth treats them as additional ways to reach the
-  // same user record.
-  emailAndPassword: {
-    enabled: true,
-    // Turn this on once Resend is wired in (sendResetPassword below) — until then a user who
-    // forgets their password has no self-serve way to recover it.
-    requireEmailVerification: false,
-  },
-
-  // TODO(resend): once RESEND_API_KEY is set, send real emails here instead of logging.
-  // See src/email.ts once it exists — these two hooks are the only things that change.
-  emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
-      console.log(`[dev] verification email for ${user.email}: ${url}`);
-    },
-  },
-
-  plugins: [
-    organization({
-      // Keep it simple for the first product: owner / admin / member. "Owner" is whoever
-      // created the school's account; "admin" is office staff who can manage the school;
-      // "member" is anyone else invited in (a teacher, for instance) until Acadlas School
-      // adds its own, more specific roles on top of this.
-      creatorRole: 'owner',
-
-      // A school's invitation flow needs real email before it's usable by an actual school.
-      // For now this just logs the link so you can test the flow by hand.
-      async sendInvitationEmail(data) {
-        console.log(`[dev] invitation for ${data.email} to join "${data.organization.name}":`, data.id);
-      },
+export function createAuth({ db, secret, baseURL, trustedOrigins }: AuthOptions) {
+  return betterAuth({
+    database: drizzleAdapter(db, {
+      provider: 'pg',
+      schema,
+      // Creating a school writes the organization and its owner's membership; with
+      // transactions on, both land or neither does.
+      transaction: true,
     }),
-  ],
 
-  trustedOrigins: allowedOrigins,
+    // Email + password. Google sign-in or phone OTP can be added later without touching
+    // anything else, since Better Auth treats them as more ways to reach the same user.
+    emailAndPassword: {
+      enabled: true,
+      // Turn on once Resend is configured — until then nobody could receive the link.
+      requireEmailVerification: false,
+      async sendResetPassword({ user, url }) {
+        await sendMail({
+          to: user.email,
+          subject: 'Reset your Acadlas password',
+          text: `Hello ${user.name},\n\nSomeone asked to reset the password for this Acadlas account. If it was you, open this link within an hour to choose a new one:\n\n${url}\n\nIf it was not you, ignore this email and your password stays as it is.`,
+        });
+      },
+    },
 
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
-});
+    emailVerification: {
+      async sendVerificationEmail({ user, url }) {
+        await sendMail({
+          to: user.email,
+          subject: 'Confirm your email for Acadlas',
+          text: `Hello ${user.name},\n\nConfirm this email address for your Acadlas account:\n\n${url}`,
+        });
+      },
+    },
+
+    session: {
+      // The session is re-read from a signed cookie for five minutes instead of hitting the
+      // database on every request. Membership is still checked per request (tenant.ts).
+      cookieCache: { enabled: true, maxAge: 5 * 60 },
+    },
+
+    plugins: [
+      organization({
+        creatorRole: 'owner',
+        ac,
+        roles: authRoles,
+        // School staff do not check email hourly; a week is a kinder window than 48 hours.
+        invitationExpiresIn: 60 * 60 * 24 * 7,
+
+        async sendInvitationEmail(data) {
+          const role = roleLabels[data.role as SchoolRole] ?? data.role;
+          await sendMail({
+            to: data.email,
+            subject: `Join ${data.organization.name} on Acadlas`,
+            text: `${data.inviter.user.name} has invited you to ${data.organization.name} on Acadlas as ${role}.\n\nOpen this link to accept:\n\n${appUrl()}/invite/${data.id}\n\nThe link works for seven days.`,
+          });
+        },
+
+        organizationHooks: {
+          // Every school starts with a profile row and its owner on the staff list, so no
+          // screen ever has to handle a school with neither.
+          async afterCreateOrganization({ organization: school, user }) {
+            await db.insert(schoolProfile).values({ schoolId: school.id }).onConflictDoNothing();
+            await db
+              .insert(staff)
+              .values({
+                schoolId: school.id,
+                userId: user.id,
+                name: user.name,
+                email: user.email.toLowerCase(),
+                designation: 'Principal',
+              })
+              .onConflictDoNothing();
+          },
+
+          // Accepting an invitation links the login to the staff record that was created
+          // for that email when the invitation was sent.
+          async afterAcceptInvitation({ organization: school, user }) {
+            const email = user.email.toLowerCase();
+            const linked = await db
+              .update(staff)
+              .set({ userId: user.id, invitationId: null })
+              .where(and(eq(staff.schoolId, school.id), eq(staff.email, email), isNull(staff.userId)))
+              .returning({ id: staff.id });
+
+            if (linked.length === 0) {
+              await db
+                .insert(staff)
+                .values({ schoolId: school.id, userId: user.id, name: user.name, email })
+                .onConflictDoNothing();
+            }
+          },
+        },
+      }),
+    ],
+
+    trustedOrigins,
+    secret,
+    baseURL,
+  });
+}
+
+export type Auth = ReturnType<typeof createAuth>;

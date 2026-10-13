@@ -3,22 +3,28 @@
   "type": "module",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "auth:generate": "npx auth@latest generate --config src/auth.ts --output src/db/auth-schema.ts -y",
+    "start": "tsx src/index.ts",
+    "test": "tsx --test src/test/*.test.ts",
+    "auth:generate": "npx auth@latest generate --config src/auth-cli.ts --output src/db/auth-schema.ts -y",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
-    "better-auth": "^1.3.26",
+    "better-auth": "^1.7.7",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.6.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.9",
     "@hono/node-server": "^1.13.7",
     "@types/node": "^22.20.5",
     "drizzle-kit": "^0.31.6",

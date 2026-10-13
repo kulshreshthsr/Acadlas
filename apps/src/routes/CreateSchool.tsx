@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthShell } from '../components/AuthShell';
 import { RecordConstellation } from '../components/RecordConstellation';
 import { Field } from '../components/Field';
@@ -24,6 +25,7 @@ const fieldOrder = ['school-name', 'short-name'];
 
 export function CreateSchool() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [shortName, setShortName] = useState('');
   // Once someone edits the short name by hand, it stops following the school name.
@@ -75,6 +77,8 @@ export function CreateSchool() {
         await organization.setActive({ organizationId: data.id });
       }
 
+      // Anything cached belongs to whichever school was open before this one.
+      queryClient.clear();
       navigate('/app', { replace: true });
     } catch (thrown) {
       setFormError(describeThrownError(thrown));

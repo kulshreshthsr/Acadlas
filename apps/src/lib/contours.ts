@@ -6,6 +6,10 @@
 type Options = {
   cell?: number;
   levels?: number[];
+  /** Draw one frame and never animate — for surfaces people work on all day. */
+  still?: boolean;
+  /** Where in the noise field to start. A school's id hashed here gives each school its own terrain. */
+  seed?: number;
 };
 
 // Compact 3D simplex noise (Stefan Gustavson's reference, public domain).
@@ -98,11 +102,11 @@ function simplex3(xin: number, yin: number, zin: number) {
   return 32 * (n0 + n1 + n2 + n3);
 }
 
-export function mountContours(canvas: HTMLCanvasElement, pointerArea: HTMLElement, options: Options = {}) {
+export function mountContours(canvas: HTMLCanvasElement, pointerArea: HTMLElement, options: Options = {}): () => void {
   const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  if (!ctx) return () => {};
 
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = options.still || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const levels = options.levels ?? [-0.55, -0.42, -0.3, -0.18, -0.06, 0.06, 0.18, 0.3, 0.42, 0.55, 0.68];
   let cell = options.cell ?? 16;
 
@@ -235,7 +239,7 @@ export function mountContours(canvas: HTMLCanvasElement, pointerArea: HTMLElemen
   let visible = true;
   let raf = 0;
   let last = 0;
-  let clock = Math.random() * 10;
+  let clock = options.seed ?? Math.random() * 10;
 
   function frame(now: number) {
     if (!running) return;
@@ -269,34 +273,50 @@ export function mountContours(canvas: HTMLCanvasElement, pointerArea: HTMLElemen
   sample(clock);
   draw();
 
-  new ResizeObserver(() => {
+  const resizeObserver = new ResizeObserver(() => {
     resize();
     sample(clock);
     draw();
-  }).observe(canvas);
+  });
+  resizeObserver.observe(canvas);
 
-  new IntersectionObserver(([entry]) => {
+  const intersectionObserver = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
-    visible ? start() : stop();
-  }).observe(canvas);
+    if (visible) start();
+    else stop();
+  });
+  intersectionObserver.observe(canvas);
 
-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  const onVisibility = () => (document.hidden ? stop() : start());
+  document.addEventListener('visibilitychange', onVisibility);
 
+  const onPointerMove = (event: PointerEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.tx = event.clientX - rect.left;
+    pointer.ty = event.clientY - rect.top;
+    if (pointer.x < -9000) {
+      pointer.x = pointer.tx;
+      pointer.y = pointer.ty;
+    }
+    pointer.target = 1;
+  };
+  const onPointerLeave = () => {
+    pointer.target = 0;
+  };
   if (!reduceMotion) {
-    pointerArea.addEventListener('pointermove', (event) => {
-      const rect = canvas.getBoundingClientRect();
-      pointer.tx = event.clientX - rect.left;
-      pointer.ty = event.clientY - rect.top;
-      if (pointer.x < -9000) {
-        pointer.x = pointer.tx;
-        pointer.y = pointer.ty;
-      }
-      pointer.target = 1;
-    });
-    pointerArea.addEventListener('pointerleave', () => {
-      pointer.target = 0;
-    });
+    pointerArea.addEventListener('pointermove', onPointerMove);
+    pointerArea.addEventListener('pointerleave', onPointerLeave);
   }
 
   start();
+
+  // Undoes everything above, for a canvas whose component is unmounting.
+  return () => {
+    stop();
+    resizeObserver.disconnect();
+    intersectionObserver.disconnect();
+    document.removeEventListener('visibilitychange', onVisibility);
+    pointerArea.removeEventListener('pointermove', onPointerMove);
+    pointerArea.removeEventListener('pointerleave', onPointerLeave);
+  };
 }
