@@ -388,6 +388,69 @@ studentRoutes.get('/students/:id', async (c) => {
   });
 });
 
+/**
+ * The student's family, worked out from the guardians they share: everyone who has a
+ * guardian in common, the student included, eldest first. `birthOrder` is the place in that
+ * line (1 = eldest), which is what a sibling discount usually goes by. With fee access each
+ * child also carries what they owe in all, so a discount can be decided with the figures in view.
+ */
+studentRoutes.get('/students/:id/siblings', async (c) => {
+  const db = c.get('db');
+  const t = c.get('tenant');
+  const id = c.req.param('id');
+  await getStudent(db, t, id);
+  const year = await findCurrentYear(db, t.schoolId);
+  await assertCanViewStudent(db, t, id, year?.id ?? null);
+
+  const guardians = await db
+    .select({ id: guardian.id, name: guardian.name, phone: guardian.phone, relation: studentGuardian.relation, isPrimary: studentGuardian.isPrimary })
+    .from(studentGuardian)
+    .innerJoin(guardian, eq(guardian.id, studentGuardian.guardianId))
+    .where(and(eq(studentGuardian.schoolId, t.schoolId), eq(studentGuardian.studentId, id)))
+    .orderBy(desc(studentGuardian.isPrimary));
+  const guardianIds = guardians.map((g) => g.id);
+
+  const members = guardianIds.length
+    ? await db
+        .selectDistinct({
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          status: student.status,
+          dateOfBirth: student.dateOfBirth,
+          createdAt: student.createdAt,
+          isRte: student.isRte,
+          gradeName: grade.name,
+          sectionName: section.name,
+        })
+        .from(studentGuardian)
+        .innerJoin(student, eq(student.id, studentGuardian.studentId))
+        .leftJoin(enrollment, year ? and(eq(enrollment.studentId, student.id), eq(enrollment.yearId, year.id)) : sql`false`)
+        .leftJoin(section, eq(section.id, enrollment.sectionId))
+        .leftJoin(grade, eq(grade.id, section.gradeId))
+        .where(and(eq(studentGuardian.schoolId, t.schoolId), inArray(studentGuardian.guardianId, guardianIds)))
+    : [];
+
+  // Eldest first; a missing date of birth goes last, in the order they were admitted.
+  members.sort((a, b) => (a.dateOfBirth ?? '9999').localeCompare(b.dateOfBirth ?? '9999') || a.createdAt.getTime() - b.createdAt.getTime());
+
+  const withFees = can(t, 'fees.view');
+  const family = await Promise.all(
+    members.map(async (m, i) => ({
+      id: m.id,
+      name: fullName(m),
+      status: m.status,
+      classLabel: m.gradeName ? `${m.gradeName}-${m.sectionName}` : null,
+      dateOfBirth: m.dateOfBirth,
+      birthOrder: i + 1,
+      isSelf: m.id === id,
+      isRte: m.isRte,
+      balance: withFees ? (await studentCharges(db, t.schoolId, m.id)).reduce((sum, ch) => sum + ch.balance, 0) : null,
+    })),
+  );
+  return c.json({ guardians, family });
+});
+
 studentRoutes.patch('/students/:id', async (c) => {
   const db = c.get('db');
   const t = c.get('tenant');
