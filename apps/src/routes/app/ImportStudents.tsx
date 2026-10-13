@@ -30,6 +30,7 @@ type Target =
   | 'fatherName'
   | 'motherName'
   | 'guardianName'
+  | 'guardianRelation'
   | 'guardianPhone'
   | 'guardianEmail'
   | 'address'
@@ -45,11 +46,12 @@ const targets: { value: Target; label: string; match: RegExp }[] = [
   { value: 'className', label: 'Class', match: /^class\s*(name)?$|grade/i },
   { value: 'sectionName', label: 'Section', match: /^sec(tion)?$|division|^div$/i },
   { value: 'rollNo', label: 'Roll number', match: /roll/i },
-  { value: 'admissionNo', label: 'Admission number', match: /adm(ission)?\.?\s*(no|number|#)|^sr\.?\s*no|registration|scholar/i },
+  { value: 'admissionNo', label: 'Admission number', match: /adm(ission)?\.?\s*(no|number|#)|^sr\.?\s*no|registration|scholar|student\s*id/i },
   { value: 'admittedOn', label: 'Admission date', match: /adm(ission)?\s*date|date of adm|doa/i },
   { value: 'fatherName', label: 'Father’s name', match: /father/i },
   { value: 'motherName', label: 'Mother’s name', match: /mother/i },
   { value: 'guardianName', label: 'Guardian’s name', match: /guardian|parent'?s? name/i },
+  { value: 'guardianRelation', label: 'Guardian’s relation (father, mother…)', match: /relation/i },
   { value: 'guardianPhone', label: 'Guardian’s mobile', match: /mobile|phone|contact|whatsapp/i },
   { value: 'guardianEmail', label: 'Guardian’s email', match: /e-?mail/i },
   { value: 'address', label: 'Address', match: /address|residence/i },
@@ -75,10 +77,15 @@ function toIsoDate(value: string): string | null {
   return `${year}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
 }
 
+/**
+ * "6-B", "6B", "6 B" and "Class 6 B" are class 6, section B. A word on its own — "Nursery",
+ * "UKG" — is a class, so its last letter is not a section; and a trailing letter only counts as
+ * a section when it follows a separator or a digit.
+ */
 function splitClass(value: string): { className: string; sectionName: string } {
   const v = value.trim().replace(/^class\s+/i, '');
-  const m = v.match(/^(.*?)[\s\-/]*([A-Za-z])$/);
-  if (m && m[1]) return { className: m[1].trim(), sectionName: m[2].toUpperCase() };
+  const m = v.match(/^(.+?)(?:\s*[-/]\s*|\s+|(?<=\d))([A-Za-z])$/);
+  if (m) return { className: m[1].trim(), sectionName: m[2].toUpperCase() };
   return { className: v, sectionName: '' };
 }
 
@@ -172,11 +179,15 @@ export function ImportStudents() {
     }
     setFileName(file.name);
     setTable(parsed);
-    // Guess each column from its header; a header can only claim a target once.
+    // Guess each column from its header; a header can only claim a target once, and a sheet has
+    // one class column — a later "Grade" (an exam result, in many sheets) must not replace it.
     const used = new Set<Target>();
+    const classTargets: Target[] = ['className', 'classAndSection'];
     setMapping(
       parsed[0].map((h) => {
-        const hit = targets.find((t) => !used.has(t.value) && t.match.test(h.trim()));
+        const hit = targets.find(
+          (t) => !used.has(t.value) && !(classTargets.includes(t.value) && classTargets.some((c) => used.has(c))) && t.match.test(h.trim()),
+        );
         if (hit) used.add(hit.value);
         return hit?.value ?? 'ignore';
       }),
