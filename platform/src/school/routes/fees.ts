@@ -35,6 +35,7 @@ import {
   applyFines,
   assertDayOpen,
   expectedCashFor,
+  feeSettings,
   headByName,
   planAllocation,
   studentCharges,
@@ -107,16 +108,23 @@ feeRoutes.delete('/fees/heads/:id', async (c) => {
 // Plans
 // ---------------------------------------------------------------------------
 
-/** The school's late-fee policy for this plan. `none` is the default: nothing is charged. */
+/**
+ * The school's late-fee policy for this plan; `none` is the default and charges nothing.
+ * `mode` is how often it repeats (once, daily, weekly, monthly). `basis` is whether each
+ * charge is a fixed `amount` or `rate` basis points (150 = 1.5%) of the instalment.
+ */
 const fineShape = z
   .object({
-    mode: z.enum(['none', 'flat', 'daily', 'monthly']).default('none'),
+    mode: z.enum(['none', 'flat', 'daily', 'weekly', 'monthly']).default('none'),
+    basis: z.enum(['amount', 'percent']).default('amount'),
     amount: paise.default(0),
-    graceDays: z.number().int().min(0).max(120).default(0),
+    rate: z.number().int().min(0).max(10_000).default(0),
+    graceDays: z.number().int().min(0).max(365).default(0),
     cap: paise.default(0),
   })
-  .refine((f) => f.mode === 'none' || f.amount > 0, { message: 'Enter the late fee amount.', path: ['amount'] })
-  .refine((f) => f.cap === 0 || f.cap >= f.amount, { message: 'The ceiling cannot be less than one late fee.', path: ['cap'] });
+  .refine((f) => f.mode === 'none' || f.basis !== 'amount' || f.amount > 0, { message: 'Enter the late fee amount.', path: ['amount'] })
+  .refine((f) => f.mode === 'none' || f.basis !== 'percent' || f.rate > 0, { message: 'Enter the late fee percentage.', path: ['rate'] })
+  .refine((f) => f.basis !== 'amount' || f.cap === 0 || f.cap >= f.amount, { message: 'The ceiling cannot be less than one late fee.', path: ['cap'] });
 
 const planShape = z.object({
   yearId: z.string().optional(),
@@ -136,7 +144,12 @@ const planShape = z.object({
     .max(24),
 });
 
-const noFine = { mode: 'none', amount: 0, graceDays: 0, cap: 0 } as const;
+const noFine = { mode: 'none', basis: 'amount', amount: 0, rate: 0, graceDays: 0, cap: 0 } as const;
+
+/** The plan columns a policy is stored in. */
+function fineColumns(fine: z.infer<typeof fineShape>) {
+  return { fineMode: fine.mode, fineBasis: fine.basis, fineAmount: fine.amount, fineRate: fine.rate, fineGraceDays: fine.graceDays, fineCap: fine.cap };
+}
 
 feeRoutes.get('/fees/plans', async (c) => {
   const db = c.get('db');
@@ -280,10 +293,7 @@ feeRoutes.post('/fees/plans', async (c) => {
         schoolId: t.schoolId,
         yearId: year.id,
         name: body.name,
-        fineMode: fine.mode,
-        fineAmount: fine.amount,
-        fineGraceDays: fine.graceDays,
-        fineCap: fine.cap,
+        ...fineColumns(fine),
       })
       .returning();
     await tx.insert(feePlanGrade).values(body.gradeIds.map((gradeId) => ({ schoolId: t.schoolId, planId: plan.id, yearId: year.id, gradeId })));
@@ -311,7 +321,7 @@ feeRoutes.put('/fees/plans/:id', async (c) => {
     const fine = body.fine ?? noFine;
     await tx
       .update(feePlan)
-      .set({ name: body.name, fineMode: fine.mode, fineAmount: fine.amount, fineGraceDays: fine.graceDays, fineCap: fine.cap })
+      .set({ name: body.name, ...fineColumns(fine) })
       .where(eq(feePlan.id, plan.id));
 
     // Classes taken off the plan lose their unpaid charges from it.
@@ -792,6 +802,7 @@ feeRoutes.post('/fees/payments/:id/bounce', async (c) => {
     z.object({
       bouncedOn: isoDate.optional(),
       reason: requiredText('Reason', 300),
+      /** What the bank charged. Leave out to use the school's default for this kind of receipt; 0 waives it. */
       bankCharge: paise.optional(),
     }),
   );
@@ -815,10 +826,14 @@ feeRoutes.post('/fees/payments/:id/bounce', async (c) => {
   await db.transaction(async (tx) => {
     await tx.update(payment).set({ status: 'bounced', bouncedOn, bounceReason: body.reason }).where(eq(payment.id, p.id));
 
-    if (body.bankCharge && body.bankCharge > 0) {
+    // What the bank charged: whatever was entered (0 waives it), otherwise the school's own
+    // default for this kind of receipt, under the head name the school has chosen.
+    const settings = await feeSettings(tx, t.schoolId);
+    const bankCharge = body.bankCharge ?? (p.mode === 'cheque' ? settings.bankChargeCheque : settings.bankChargeTransfer);
+    if (bankCharge > 0) {
       if (!year) throw conflict('Set up an academic year before adding a bank charge.');
-      const head = await headByName(tx, t.schoolId, BANK_CHARGE_HEAD);
-      const label = `${BANK_CHARGE_HEAD} — ${p.mode === 'cheque' ? 'cheque' : 'transfer'} ${p.reference ?? p.receiptNo} returned`;
+      const head = await headByName(tx, t.schoolId, settings.bankChargeHead || BANK_CHARGE_HEAD);
+      const label = `${head.name} —${p.mode === 'cheque' ? 'cheque' : 'transfer'} ${p.reference ?? p.receiptNo} returned`;
       await tx.insert(feeCharge).values({
         schoolId: t.schoolId,
         studentId: s.id,
@@ -826,7 +841,7 @@ feeRoutes.post('/fees/payments/:id/bounce', async (c) => {
         headId: head.id,
         label,
         dueOn: bouncedOn,
-        amount: body.bankCharge,
+        amount: bankCharge,
         createdBy: t.userId,
       });
     }
@@ -837,7 +852,7 @@ feeRoutes.post('/fees/payments/:id/bounce', async (c) => {
       entityId: p.id,
       studentId: p.studentId,
       summary: `Receipt ${p.receiptNo} (${formatINR(p.amount)}) returned by the bank on ${formatDateIN(bouncedOn)}: ${body.reason}`,
-      data: { bankCharge: body.bankCharge ?? 0, reference: p.reference },
+      data: { bankCharge, reference: p.reference },
     });
     // The instalment is unpaid again, so its late fee starts counting again from its own
     // due date — the parent's cheque bouncing does not buy them time.
