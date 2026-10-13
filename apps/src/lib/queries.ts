@@ -56,3 +56,25 @@ export function sectionOptions(structure: Structure | undefined) {
 export function classLabel(name: string) {
   return /^\d+$/.test(name) ? `Class ${name}` : name;
 }
+
+export type Family = {
+  guardians: { id: string; name: string; phone: string | null; relation: string; isPrimary: boolean }[];
+  /** Everyone who shares a guardian with the student, the student included, eldest first. */
+  family: {
+    id: string;
+    name: string;
+    status: string;
+    classLabel: string | null;
+    dateOfBirth: string | null;
+    /** 1 = the eldest. */
+    birthOrder: number;
+    isSelf: boolean;
+    isRte: boolean;
+    /** What they owe in all; null when the viewer cannot see fees. */
+    balance: number | null;
+  }[];
+};
+
+export function useFamily(studentId: string) {
+  return useQuery({ queryKey: ['family', studentId], queryFn: () => api.get<Family>(`/school/students/${studentId}/siblings`) });
+}
