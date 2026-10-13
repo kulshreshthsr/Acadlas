@@ -111,3 +111,10 @@ export function hashSeed(value: string): number {
   for (let i = 0; i < value.length; i++) h = Math.imul(h ^ value.charCodeAt(i), 16777619);
   return ((h >>> 0) % 10000) / 100;
 }
+
+/** 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th". */
+export function ordinal(n: number): string {
+  const rest = n % 100;
+  if (rest >= 11 && rest <= 13) return `${n}th`;
+  return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+}
