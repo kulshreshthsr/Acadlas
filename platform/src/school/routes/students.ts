@@ -103,8 +103,21 @@ async function attachGuardians(db: DbOrTx, tenant: Tenant, studentId: string, li
       guardianId = g.id;
     } else {
       const { relation: _r, isPrimary: _p, ...fields } = link;
-      const [g] = await db.insert(guardian).values({ schoolId: tenant.schoolId, ...fields }).returning({ id: guardian.id });
-      guardianId = g.id;
+      // The same person entered again — same phone and same name — is the same guardian, which
+      // is what puts brothers and sisters in one family. A phone on its own is not enough: a
+      // mother and father often share one number.
+      const [known] = fields.phone
+        ? await db
+            .select({ id: guardian.id })
+            .from(guardian)
+            .where(and(eq(guardian.schoolId, tenant.schoolId), eq(guardian.phone, fields.phone), sql`lower(${guardian.name}) = lower(${fields.name})`))
+            .limit(1)
+        : [];
+      if (known) guardianId = known.id;
+      else {
+        const [g] = await db.insert(guardian).values({ schoolId: tenant.schoolId, ...fields }).returning({ id: guardian.id });
+        guardianId = g.id;
+      }
     }
     await db
       .insert(studentGuardian)
