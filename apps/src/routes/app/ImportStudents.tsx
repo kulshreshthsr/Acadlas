@@ -56,6 +56,13 @@ const targets: { value: Target; label: string; match: RegExp }[] = [
   { value: 'apaarId', label: 'APAAR ID', match: /apaar/i },
 ];
 
+type ImportResult = {
+  valid: number;
+  errors: { row: number; field: string; message: string }[];
+  /** Each class-and-section the sheet names that the school does not have, once, with how many rows use it. */
+  missing: { className: string; sectionName: string; rows: number; classExists: boolean }[];
+};
+
 /** Turns "14/01/2015", "14-1-15", "2015-01-14" or "14.01.2015" into 2015-01-14. */
 function toIsoDate(value: string): string | null {
   const v = value.trim();
@@ -89,7 +96,9 @@ export function ImportStudents() {
   const [table, setTable] = useState<string[][] | null>(null);
   const [mapping, setMapping] = useState<Target[]>([]);
   const [readError, setReadError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ valid: number; errors: { row: number; field: string; message: string }[] } | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  // Whether classes and sections the sheet names, and the school lacks, should be added.
+  const [createMissing, setCreateMissing] = useState(false);
 
   const headers = table?.[0] ?? [];
   const body = useMemo(() => table?.slice(1) ?? [], [table]);
@@ -136,10 +145,10 @@ export function ImportStudents() {
   );
 
   const check = useMutation({
-    mutationFn: (dryRun: boolean) => api.post<{ valid: number; errors: { row: number; field: string; message: string }[]; imported: number }>('/school/students/import', { rows, dryRun }),
-    onSuccess: (res, dryRun) => {
+    mutationFn: (v: { dryRun: boolean; createMissing: boolean }) => api.post<ImportResult & { imported: number }>('/school/students/import', { rows, ...v }),
+    onSuccess: (res, v) => {
       setResult(res);
-      if (!dryRun && res.imported > 0) {
+      if (!v.dryRun && res.imported > 0) {
         queryClient.invalidateQueries();
         toast(`Imported ${plural(res.imported, 'student')}`);
         navigate('/app/students', { replace: true });
@@ -150,6 +159,7 @@ export function ImportStudents() {
   async function readFile(file: File) {
     setReadError(null);
     setResult(null);
+    setCreateMissing(false);
     if (/\.xlsx?$/i.test(file.name)) {
       setReadError('That is an Excel workbook. In Excel, choose File → Save a copy → CSV UTF-8, then pick that file here.');
       return;
@@ -180,6 +190,8 @@ export function ImportStudents() {
     !mapped.has('sectionName') && !mapped.has('classAndSection') ? 'the section' : null,
     !mapped.has('guardianName') && !mapped.has('fatherName') && !mapped.has('motherName') ? 'a parent or guardian’s name' : null,
   ].filter(Boolean);
+
+  const newClasses = (result?.missing ?? []).filter((m, i, all) => !m.classExists && all.findIndex((o) => o.className.toLowerCase() === m.className.toLowerCase()) === i).length;
 
   const errorsByRow = new Map<number, string[]>();
   for (const e of result?.errors ?? []) errorsByRow.set(e.row, [...(errorsByRow.get(e.row) ?? []), e.message]);
@@ -216,7 +228,7 @@ export function ImportStudents() {
         <div className="space-y-5">
           <Card
             title={<h2 className="text-[1rem]">Match the columns <span className="font-normal text-slate-500">from {fileName}, {plural(body.length, 'row')}</span></h2>}
-            action={<button type="button" className="btn btn-quiet btn-sm" onClick={() => { setTable(null); setResult(null); }}>Choose another file</button>}
+            action={<button type="button" className="btn btn-quiet btn-sm" onClick={() => { setTable(null); setResult(null); setCreateMissing(false); }}>Choose another file</button>}
           >
             <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
               {headers.map((h, i) => (
@@ -280,6 +292,48 @@ export function ImportStudents() {
             {!result && rows.length > 12 && <p className="border-t border-slate-100 px-5 py-2.5 text-[0.8125rem] text-slate-500">and {rows.length - 12} more rows</p>}
           </Card>
 
+          {result && result.missing.length > 0 && (
+            <Card title={<h2 className="text-[1rem]">{createMissing ? 'These will be added to your school' : 'Not in your school yet'}</h2>}>
+              <p className="text-[0.875rem] text-slate-600">
+                {createMissing
+                  ? `Importing will first add ${plural(result.missing.length, 'section')}${newClasses > 0 ? ` and ${plural(newClasses, 'class', 'classes')}` : ''}, then place the students in them.`
+                  : `${plural(result.missing.length, 'class-and-section pair')} in your sheet ${result.missing.length === 1 ? 'is' : 'are'} not set up in ${school.currentYear?.name ?? 'this year'}. If the sheet is right, add them here instead of fixing every row.`}
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {result.missing.map((m) => (
+                  <li key={`${m.className}|${m.sectionName}`} className="rounded-full bg-slate-100 px-3 py-1 text-[0.8125rem] text-ink-800">
+                    <b>{m.className}-{m.sectionName}</b>
+                    <span className="text-slate-500"> · {plural(m.rows, 'student')}{m.classExists ? '' : ' · new class'}</span>
+                  </li>
+                ))}
+              </ul>
+              {!createMissing && (
+                <div className="mt-4">
+                  {school.can('school.manage') ? (
+                    <button
+                      type="button"
+                      className="btn btn-line btn-sm"
+                      disabled={check.isPending}
+                      onClick={() => {
+                        setCreateMissing(true);
+                        check.mutate({ dryRun: true, createMissing: true });
+                      }}
+                    >
+                      Add these and check again
+                    </button>
+                  ) : (
+                    <Notice tone="warn">Only someone who manages the school can add classes. Ask them, or change the sheet.</Notice>
+                  )}
+                </div>
+              )}
+              {createMissing && (
+                <button type="button" className="btn btn-quiet btn-sm mt-4" disabled={check.isPending} onClick={() => { setCreateMissing(false); check.mutate({ dryRun: true, createMissing: false }); }}>
+                  Don’t add them
+                </button>
+              )}
+            </Card>
+          )}
+
           {check.error && <ErrorState error={new Error(errorMessage(check.error))} />}
 
           <div className="sticky bottom-20 z-20 flex flex-col gap-3 rounded-2xl bg-ink-800 p-4 text-white shadow-card sm:flex-row sm:items-center lg:bottom-4" data-surface="dark">
@@ -293,12 +347,12 @@ export function ImportStudents() {
               {result && result.errors.length === 0 && <><b>All {plural(result.valid, 'row')} are ready.</b> Import adds every one of them in one go.</>}
             </p>
             {(!result || result.errors.length > 0) && (
-              <button type="button" className="btn btn-ghost btn-sm" disabled={missing.length > 0 || check.isPending} onClick={() => check.mutate(true)}>
+              <button type="button" className="btn btn-ghost btn-sm" disabled={missing.length > 0 || check.isPending} onClick={() => check.mutate({ dryRun: true, createMissing })}>
                 {check.isPending && <Spinner />} Check rows
               </button>
             )}
             {result && result.errors.length === 0 && (
-              <button type="button" className="btn btn-sun btn-sm" disabled={check.isPending} onClick={() => check.mutate(false)}>
+              <button type="button" className="btn btn-sun btn-sm" disabled={check.isPending} onClick={() => check.mutate({ dryRun: false, createMissing })}>
                 {check.isPending && <Spinner />} Import {plural(result.valid, 'student')}
               </button>
             )}
