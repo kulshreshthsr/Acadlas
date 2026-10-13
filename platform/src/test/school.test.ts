@@ -336,6 +336,34 @@ describe('students', () => {
     assert.equal(good.body.imported, 1);
   });
 
+  test('import lists the classes it is missing once, and can add them', async () => {
+    const rows = [
+      { firstName: 'Tara', className: 'Class 12', sectionName: 'q', guardianName: 'Mr N', guardianPhone: '98444 44444' },
+      { firstName: 'Zoya', className: '12', sectionName: 'Q', guardianName: 'Mr N', guardianPhone: '98444 44444' },
+      { firstName: 'Kabir', className: '5', sectionName: 'Q', guardianName: 'Mr M' },
+    ];
+    const dry = await A.owner.post('/api/school/students/import', { rows, dryRun: true });
+    assert.equal(dry.body.errors.length, 3);
+    assert.deepEqual(
+      dry.body.missing.map((m: any) => [m.className, m.sectionName, m.rows, m.classExists]),
+      [['12', 'Q', 2, false], ['5', 'Q', 1, true]],
+    );
+
+    const ready = await A.owner.post('/api/school/students/import', { rows, dryRun: true, createMissing: true });
+    assert.equal(ready.body.errors.length, 0);
+    assert.equal(ready.body.valid, 3);
+    const before = await A.owner.get('/api/school/structure');
+    assert.ok(!before.body.grades.some((g: any) => g.name === '12'), 'a check alone adds nothing');
+
+    const done = await A.owner.post('/api/school/students/import', { rows, dryRun: false, createMissing: true });
+    assert.equal(done.status, 201, JSON.stringify(done.body));
+    assert.equal(done.body.imported, 3);
+    assert.equal(done.body.createdClasses, 1);
+    const after = await A.owner.get('/api/school/structure');
+    assert.deepEqual(after.body.grades.find((g: any) => g.name === '12').sections.map((s: any) => s.name), ['Q']);
+    assert.equal(after.body.grades.find((g: any) => g.name === '12').sections[0].strength, 2);
+  });
+
   test('promotion moves students into next year once, and leaving keeps the record', async () => {
     const year = await A.owner.post('/api/school/years', { name: '2027–28', startsOn: '2027-04-01', endsOn: '2028-03-31', copySectionsFrom: (await A.owner.get('/api/school/me')).body.currentYear.id });
     assert.equal(year.status, 201);
