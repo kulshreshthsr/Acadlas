@@ -25,7 +25,7 @@ import {
   term,
 } from '../../db/school-schema';
 import { addDays, isWorkingDay, todayIST } from '../../lib/dates';
-import { conflict, invalid, isoDate, notFound, optionalText, parse, readBody, readQuery, requiredText, phone, email } from '../../lib/http';
+import { conflict, invalid, isoDate, notFound, optionalText, paise, parse, readBody, readQuery, requiredText, phone, email } from '../../lib/http';
 import { allocatedByCharge } from '../fees-engine';
 import { findCurrentYear, ownSectionIds } from '../queries';
 import { roleLabels } from '../roles';
@@ -97,6 +97,12 @@ const profileShape = z.object({
   workingDays: z.number().int().min(1).max(127).optional(),
   admissionPrefix: z.string().trim().min(1).max(12).optional(),
   receiptPrefix: z.string().trim().min(1).max(12).optional(),
+  /** The fee head names late fees and returned-cheque charges are booked under. */
+  lateFeeHead: z.string().trim().min(1).max(60).optional(),
+  bankChargeHead: z.string().trim().min(1).max(60).optional(),
+  /** Default charge for a returned cheque / transfer, in paise. 0 means none unless entered at the time. */
+  bankChargeCheque: paise.optional(),
+  bankChargeTransfer: paise.optional(),
 });
 
 coreRoutes.get('/profile', async (c) => {
