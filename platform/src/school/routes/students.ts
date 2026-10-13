@@ -738,7 +738,16 @@ studentRoutes.post('/students/import', async (c) => {
   const db = c.get('db');
   const t = c.get('tenant');
   requirePermission(t, 'students.edit');
-  const body = await readBody(c, z.object({ rows: z.array(z.record(z.unknown())).min(1).max(2000), dryRun: z.boolean().default(true) }));
+  const body = await readBody(
+    c,
+    z.object({
+      rows: z.array(z.record(z.unknown())).min(1).max(2000),
+      dryRun: z.boolean().default(true),
+      /** Add any class or section the sheet names that the school does not have yet, instead of rejecting those rows. */
+      createMissing: z.boolean().default(false),
+    }),
+  );
+  if (body.createMissing) requirePermission(t, 'school.manage');
   const year = await resolveYear(db, t);
 
   const sections = await db
@@ -746,15 +755,21 @@ studentRoutes.post('/students/import', async (c) => {
     .from(section)
     .innerJoin(grade, eq(grade.id, section.gradeId))
     .where(and(eq(section.schoolId, t.schoolId), eq(section.yearId, year.id)));
-  const sectionKey = (g: string, s: string) => `${g.trim().toLowerCase().replace(/^class\s+/, '')}|${s.trim().toLowerCase()}`;
+  const gradeKey = (g: string) => g.trim().toLowerCase().replace(/^class\s+/, '');
+  const sectionKey = (g: string, s: string) => `${gradeKey(g)}|${s.trim().toLowerCase()}`;
   const sectionByKey = new Map(sections.map((s) => [sectionKey(s.gradeName, s.name), s]));
+  // A class counts as existing even if it has no section yet this year.
+  const gradeByKey = new Map((await db.select({ id: grade.id, name: grade.name }).from(grade).where(eq(grade.schoolId, t.schoolId))).map((g) => [gradeKey(g.name), g]));
+
+  // Every class-and-section the sheet names that the school lacks, listed once with how many rows need it.
+  const missing = new Map<string, { className: string; sectionName: string; rows: number; classExists: boolean }>();
 
   const existingAdmissionNos = new Set(
     (await db.select({ no: student.admissionNo }).from(student).where(eq(student.schoolId, t.schoolId))).map((r) => r.no.toLowerCase()),
   );
 
   const errors: { row: number; field: string; message: string }[] = [];
-  const valid: (z.infer<typeof importRow> & { sectionId: string; row: number })[] = [];
+  const valid: (z.infer<typeof importRow> & { sectionId: string | null; key: string; row: number })[] = [];
   const seenNos = new Set<string>();
 
   body.rows.forEach((raw, index) => {
@@ -765,10 +780,21 @@ studentRoutes.post('/students/import', async (c) => {
       return;
     }
     const r = result.data;
-    const sec = sectionByKey.get(sectionKey(r.className, r.sectionName));
+    const key = sectionKey(r.className, r.sectionName);
+    const sec = sectionByKey.get(key);
     if (!sec) {
-      errors.push({ row, field: 'sectionName', message: `There is no section ${r.className}-${r.sectionName} in ${year.name}.` });
-      return;
+      const gap = missing.get(key) ?? {
+        className: r.className.replace(/^class\s+/i, '').trim(),
+        sectionName: r.sectionName.trim().toUpperCase(),
+        rows: 0,
+        classExists: gradeByKey.has(gradeKey(r.className)),
+      };
+      gap.rows += 1;
+      missing.set(key, gap);
+      if (!body.createMissing) {
+        errors.push({ row, field: 'sectionName', message: `There is no section ${r.className}-${r.sectionName} in ${year.name}.` });
+        return;
+      }
     }
     if (r.admissionNo) {
       const key = r.admissionNo.toLowerCase();
@@ -782,14 +808,43 @@ studentRoutes.post('/students/import', async (c) => {
       }
       seenNos.add(key);
     }
-    valid.push({ ...r, sectionId: sec.id, row });
+    valid.push({ ...r, sectionId: sec?.id ?? null, key, row });
   });
 
+  const gaps = [...missing.values()];
   if (body.dryRun || errors.length > 0) {
-    return c.json({ valid: valid.length, errors, imported: 0 });
+    return c.json({ valid: valid.length, errors, imported: 0, missing: gaps });
   }
 
+  let createdClasses = 0;
   await db.transaction(async (tx) => {
+    // Add whatever the sheet needs that the school lacks, in the order the sheet first names it.
+    const createdSections = new Map<string, string>();
+    if (missing.size > 0) {
+      const gradeIds = new Map([...gradeByKey].map(([k, g]) => [k, g.id]));
+      const [{ max }] = await tx.select({ max: sql<number>`coalesce(max(${grade.position}), -1)::int` }).from(grade).where(eq(grade.schoolId, t.schoolId));
+      let position = Number(max) + 1;
+      for (const [key, gap] of missing) {
+        const gk = gradeKey(gap.className);
+        let gradeId = gradeIds.get(gk);
+        if (!gradeId) {
+          const [g] = await tx.insert(grade).values({ schoolId: t.schoolId, name: gap.className, position: position++ }).returning({ id: grade.id });
+          gradeId = g.id;
+          gradeIds.set(gk, gradeId);
+          createdClasses += 1;
+        }
+        const [s] = await tx.insert(section).values({ schoolId: t.schoolId, yearId: year.id, gradeId, name: gap.sectionName }).returning({ id: section.id });
+        createdSections.set(key, s.id);
+      }
+      await audit(tx, t, {
+        action: 'structure.imported',
+        entityType: 'school',
+        summary: `Added ${createdClasses} classes and ${missing.size} sections while importing students`,
+        data: { sections: gaps.map((g) => `${g.className}-${g.sectionName}`) },
+      });
+    }
+    for (const r of valid) r.sectionId ??= createdSections.get(r.key) ?? null;
+
     const guardianByPhone = new Map<string, string>();
     const rollBySection = new Map<string, number>();
     for (const r of valid) {
@@ -825,21 +880,22 @@ studentRoutes.post('/students/import', async (c) => {
       if (r.guardianPhone) guardianByPhone.set(r.guardianPhone, guardianId);
       await tx.insert(studentGuardian).values({ schoolId: t.schoolId, studentId: s.id, guardianId, relation: r.guardianRelation, isPrimary: true });
 
+      const sectionId = r.sectionId!;
       let roll = r.rollNo ?? null;
       if (!roll) {
-        const nextRoll = rollBySection.get(r.sectionId) ?? (await nextRollNo(tx, r.sectionId));
+        const nextRoll = rollBySection.get(sectionId) ?? (await nextRollNo(tx, sectionId));
         roll = nextRoll;
-        rollBySection.set(r.sectionId, nextRoll + 1);
+        rollBySection.set(sectionId, nextRoll + 1);
       }
       const enrolledOn = s.admittedOn > year.startsOn ? s.admittedOn : year.startsOn;
-      await tx.insert(enrollment).values({ schoolId: t.schoolId, studentId: s.id, yearId: year.id, sectionId: r.sectionId, rollNo: roll, enrolledOn });
+      await tx.insert(enrollment).values({ schoolId: t.schoolId, studentId: s.id, yearId: year.id, sectionId, rollNo: roll, enrolledOn });
       await syncStudentCharges(tx, t, s.id, year.id);
       await audit(tx, t, { action: 'student.imported', entityType: 'student', entityId: s.id, studentId: s.id, summary: `Imported from a spreadsheet (${admissionNo})` });
     }
     await audit(tx, t, { action: 'students.imported', entityType: 'student', summary: `Imported ${valid.length} students from a spreadsheet` });
   });
 
-  return c.json({ valid: valid.length, errors: [], imported: valid.length }, 201);
+  return c.json({ valid: valid.length, errors: [], imported: valid.length, missing: gaps, createdClasses, createdSections: gaps.length }, 201);
 });
 
 // ---------------------------------------------------------------------------
