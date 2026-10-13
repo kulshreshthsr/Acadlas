@@ -27,6 +27,8 @@ import {
 import { conflict, invalid } from '../lib/http';
 import type { Tenant } from './tenant';
 
+export * from './fees-policy';
+
 type Concession = { headId: string | null; percent: number; reason: string };
 
 /** RTE admissions owe nothing; otherwise a rule for this head beats a rule for everything. */
@@ -259,6 +261,9 @@ export async function syncStudentCharges(db: DbOrTx, tenant: Tenant, studentId: 
 
 export type LedgerCharge = {
   id: string;
+  yearId: string;
+  /** From the fee plan, a late fee, or added by hand (a lost ID card, a bank charge). */
+  kind: 'plan' | 'fine' | 'manual';
   label: string;
   headId: string;
   instalmentName: string | null;
@@ -281,11 +286,15 @@ export async function studentCharges(db: DbOrTx, schoolId: string, studentId: st
     .where(and(...filters))
     .orderBy(asc(feeCharge.dueOn), asc(feeCharge.label));
   const paid = await allocatedByCharge(db, schoolId, charges.map((c) => c.id));
+  // A late fee sits after the fee it is for, which has the same due date.
+  charges.sort((a, b) => a.dueOn.localeCompare(b.dueOn) || Number(!!a.fineForInstalmentId) - Number(!!b.fineForInstalmentId) || a.label.localeCompare(b.label));
   return charges.map((c) => {
     const net = c.amount - c.concession;
     const p = paid.get(c.id) ?? 0;
     return {
       id: c.id,
+      yearId: c.yearId,
+      kind: c.fineForInstalmentId ? 'fine' : c.lineId ? 'plan' : 'manual',
       label: c.label,
       headId: c.headId,
       instalmentName: c.instalmentName,
@@ -296,7 +305,7 @@ export async function studentCharges(db: DbOrTx, schoolId: string, studentId: st
       net,
       paid: p,
       balance: net - p,
-      manual: c.lineId === null,
+      manual: c.lineId === null && !c.fineForInstalmentId,
     };
   });
 }
