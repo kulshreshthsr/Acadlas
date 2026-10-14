@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import wordmark from '../assets/brand/acadlas-wordmark-light.png';
-import { navLinks, contactEmail } from '../data/site';
+import { navLinks, contactEmail, appUrl } from '../data/site';
 
 const year = new Date().getFullYear();
 ---
@@ -23,6 +23,11 @@ const year = new Date().getFullYear();
             </li>
           ))
         }
+        <li>
+          <a href={`${appUrl}/login`} class="inline-flex min-h-11 items-center text-[0.9375rem] font-medium text-slate-300 transition-colors hover:text-white">
+            Sign in
+          </a>
+        </li>
         {
           contactEmail && (
             <li>
