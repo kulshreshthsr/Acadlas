@@ -8,8 +8,10 @@ import { createAuthClient } from 'better-auth/react';
 import { organizationClient } from 'better-auth/client/plugins';
 
 // Set VITE_API_URL when the API is not on localhost (a deployed Worker, a
-// teammate's machine). See .env.local.example.
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8787';
+// teammate's machine). See .env.local.example. "same-origin" means the host serving this
+// app forwards /api/* to the API (see ../../functions), so sign-in cookies stay first-party.
+const configured = import.meta.env.VITE_API_URL ?? 'http://localhost:8787';
+const apiUrl = configured === 'same-origin' ? window.location.origin : configured;
 
 export const authClient = createAuthClient({
   baseURL: apiUrl,

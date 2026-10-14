@@ -1,0 +1,23 @@
+# Render blueprint for the platform API. Free plan sleeps after ~15 minutes idle.
+services:
+  - type: web
+    name: acadlas-api
+    runtime: node
+    plan: free
+    rootDir: platform
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATABASE_URL        # Neon connection string
+        sync: false
+      - key: BETTER_AUTH_SECRET  # a new long random string, not the local one
+        sync: false
+      - key: BETTER_AUTH_URL     # the app's address, e.g. https://acadlas.pages.dev
+        sync: false
+      - key: CORS_ORIGINS        # same address as BETTER_AUTH_URL
+        sync: false
+      - key: APP_URL             # same address again, for links in emails
+        sync: false
