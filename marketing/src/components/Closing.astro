@@ -1,6 +1,6 @@
 ---
 import Icon from './Icon.astro';
-import { contactEmail } from '../data/site';
+import { contactEmail, appUrl } from '../data/site';
 
 const mailto = contactEmail
   ? `mailto:${contactEmail}?subject=${encodeURIComponent('Acadlas School: our school would like to help')}`
@@ -16,27 +16,25 @@ const mailto = contactEmail
       One student. One record. One school.
     </h2>
     <p class="lead mx-auto mt-7 max-w-[38rem] text-slate-300">
-      Acadlas School is in development, starting with the jobs every school does daily: admissions, classes,
-      attendance and fees.{
-        mailto ? " If you run or work at a school, we'd like to hear how your day really goes." : ' The prototype above runs on sample data only.'
-      }
+      Set up your classes, bring in your students, take attendance and collect fees with numbered receipts, all from
+      one record.{mailto ? ' Want it set up with you? Write to us.' : ''}
     </p>
     <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+      <a href={`${appUrl}/signup`} class="btn btn-sun">
+        Create your school
+      </a>
       {
         mailto ? (
-          <a href={mailto} class="btn btn-sun">
+          <a href={mailto} class="btn btn-ghost">
             Email the Acadlas team
           </a>
         ) : (
-          <a href="#try" class="btn btn-sun">
-            Try the prototype
+          <a href="#how-it-works" class="btn btn-ghost">
+            <Icon name="undo" size={18} />
+            Replay how it works
           </a>
         )
       }
-      <a href="#how-it-works" class="btn btn-ghost">
-        <Icon name="undo" size={18} />
-        Replay how it works
-      </a>
     </div>
   </div>
 </section>

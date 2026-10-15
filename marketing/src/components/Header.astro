@@ -13,7 +13,7 @@ import { navLinks, appUrl } from '../data/site';
       class="pointer-events-auto relative flex min-h-14 items-center justify-between gap-4 rounded-full border border-white/10 bg-night/70 py-1.5 pl-5 pr-1.5 shadow-[0_20px_50px_-24px_rgb(0_0_0/0.6)] backdrop-blur-xl transition-[background-color,box-shadow] duration-500 data-[scrolled=true]:bg-night/90"
       data-header-bar
     >
-      <a href="#top" aria-label="Acadlas, back to top" class="inline-flex min-h-11 shrink-0 items-center rounded-sm">
+      <a href="/" aria-label="Acadlas, back to top" class="inline-flex min-h-11 shrink-0 items-center rounded-sm">
         <Image
           src={wordmark}
           alt="Acadlas"
@@ -82,7 +82,7 @@ import { navLinks, appUrl } from '../data/site';
             ))
           }
         </ul>
-        <a href="#try" class="btn btn-ghost mt-2 w-full">Try the prototype</a>
+        <a href="#try" class="btn btn-ghost mt-2 w-full">Try the demo</a>
         <div class="mt-2 grid grid-cols-2 gap-2 sm:hidden">
           <a href={`${appUrl}/login`} class="btn btn-ghost">Sign in</a>
           <a href={`${appUrl}/signup`} class="btn btn-sun">Create account</a>
@@ -107,7 +107,7 @@ import { navLinks, appUrl } from '../data/site';
   // Mark the link for the section currently in view.
   const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
   const sections = links
-    .map((link) => document.querySelector<HTMLElement>(link.getAttribute('href')!))
+    .map((link) => document.querySelector<HTMLElement>(link.getAttribute('href')!.replace('/#', '#')))
     .filter((el): el is HTMLElement => Boolean(el));
 
   if ('IntersectionObserver' in window && sections.length) {
@@ -115,7 +115,7 @@ import { navLinks, appUrl } from '../data/site';
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-          const id = `#${entry.target.id}`;
+          const id = `/#${entry.target.id}`;
           links.forEach((link) => link.setAttribute('aria-current', String(link.getAttribute('href') === id)));
         }
       },

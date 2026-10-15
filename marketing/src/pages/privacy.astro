@@ -1,0 +1,49 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+---
+
+<LegalPage
+  title="Privacy"
+  description="What information Acadlas School stores for a school, who can see it, and how it is protected."
+  updated="15 October 2026"
+>
+  <!-- DRAFT: describes how the product works today. Have it reviewed by counsel (DPDP Act 2023) before relying on it. -->
+  <p>
+    Acadlas School is software that a school uses to run its records. The school decides what to put in it. This page
+    explains what we store on the school’s behalf and how it is handled.
+  </p>
+
+  <h2>What is stored</h2>
+  <ul>
+    <li>Account details of staff: name, email address and a hashed password.</li>
+    <li>The school’s profile: name, address, board and affiliation details.</li>
+    <li>Students and guardians: names, dates of birth, contact details, admission and class records.</li>
+    <li>Attendance registers, fee plans, charges, concessions, payments and receipts.</li>
+    <li>An audit trail of important changes, with who made them and when.</li>
+  </ul>
+
+  <h2>Who can see it</h2>
+  <p>
+    Each school’s data is kept separate. Every request is tied to the signed-in school, and the server checks the
+    person’s role on each request: owner, administrator, accountant, front office or teacher. Teachers see only the
+    classes they teach. We do not sell data and we do not show advertising.
+  </p>
+
+  <h2>Children’s information</h2>
+  <p>
+    Student records are entered by the school, which is responsible for having the consent of parents or guardians
+    where the law requires it. Acadlas School keeps a consent record for each student so the school can note it.
+  </p>
+
+  <h2>Where it is stored</h2>
+  <p>
+    Records are held in a managed Postgres database and served over an encrypted connection. Password reset and
+    invitation emails are sent through an email provider. We have not had an independent security audit yet.
+  </p>
+
+  <h2>Your choices</h2>
+  <p>
+    A school can export a student’s record from the app. To correct or delete information, a school should contact us
+    and we will act on the school’s instruction. Parents and guardians should contact the school first.
+  </p>
+</LegalPage>

@@ -1,5 +1,6 @@
 ---
 import Icon from './Icon.astro';
+import { appUrl } from '../data/site';
 import type { IconName } from '../data/icons';
 
 // Illustrative sample record. Positions are fractions of the stage: x/y on wide screens, mx/my on phones.
@@ -129,7 +130,7 @@ const scope: { icon: IconName; label: string }[] = [
           <span class="absolute size-2 rounded-full bg-marigold-400 motion-safe:animate-pulse-ring"></span>
           <span class="size-2 rounded-full bg-marigold-400"></span>
         </span>
-        Acadlas School is in development
+        Now open to schools
       </p>
 
       <h1 id="hero-title" class="stretch-in mt-7">
@@ -139,16 +140,16 @@ const scope: { icon: IconName; label: string }[] = [
       </h1>
 
       <p class="lead mt-7 max-w-[32rem] text-slate-300 motion-safe:animate-rise [animation-delay:700ms]">
-        Acadlas School is being designed to bring admissions, classes, attendance and fees into one place. Enter a
-        student once, and their record follows them everywhere it's needed.
+        Acadlas School brings admissions, classes, attendance and fees into one place. Enter a student once, and
+        their record follows them everywhere it's needed.
       </p>
 
       <div class="mt-9 flex flex-col gap-3 sm:flex-row motion-safe:animate-rise [animation-delay:850ms]">
-        <a href="#how-it-works" class="btn btn-sun">
-          See how it works
-          <Icon name="arrow-down" size={18} />
+        <a href={`${appUrl}/signup`} class="btn btn-sun">
+          Create your school
+          <Icon name="arrow-right" size={18} />
         </a>
-        <a href="#try" class="btn btn-ghost">Try the prototype</a>
+        <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
       </div>
     </div>
 
@@ -245,7 +246,7 @@ const scope: { icon: IconName; label: string }[] = [
   <!-- What Acadlas School is being built to cover. -->
   <div class="relative border-t border-white/8">
     <div class="wrap py-5">
-      <p class="sr-only">Acadlas School is being designed to cover:</p>
+      <p class="sr-only">Acadlas School covers:</p>
       <ul class="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[0.9375rem] text-slate-300 lg:justify-between">
         {
           scope.map((item) => (

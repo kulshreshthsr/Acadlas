@@ -4,27 +4,27 @@ import Icon from './Icon.astro';
 const faqs = [
   {
     q: 'Can our school use Acadlas School today?',
-    a: "Not yet. Acadlas School is in development and isn't available to schools. This page shows what we're building and how it's meant to work.",
+    a: 'Yes. Create an account, set up your school, and you can admit or import students, run attendance registers, set fee plans and collect fees with numbered receipts. Online fee payment, a parent app, exams and report cards are not available yet.',
   },
   {
-    q: 'What is in the prototype on this page?',
-    a: 'A small interactive illustration of admissions, attendance and fee recording, running on made-up sample data in your browser. It is not connected to a database, nothing you enter is saved or sent anywhere, and it resets when you reload the page.',
+    q: 'What is the demo on this page?',
+    a: 'A small illustration of admissions, attendance and fee recording on made-up sample data in your browser. Nothing you enter is saved. The real app is where your school’s records live.',
   },
   {
     q: 'Which schools is it for?',
-    a: 'Schools that run classes and sections, terms, attendance registers and fee instalments.',
+    a: 'Schools that run classes and sections, terms, attendance registers and fee instalments. Fees are in rupees, receipts and certificates carry your school’s details, and students can be imported from a spreadsheet.',
   },
   {
     q: 'Will teachers be able to use it on their phones?',
-    a: 'That is a design requirement from the start. Taking attendance, checking a class list or looking up a student should all work on an ordinary phone. The prototype is a first look, not a finished mobile app.',
+    a: 'Yes. The app works in a phone browser, and teachers see only the classes they teach. It is not yet an installable app and does not work offline.',
   },
   {
-    q: 'How will you keep our school’s records private?',
-    a: 'Keeping each school’s data separate, and limiting what each role can see, are design commitments for the build, to be enforced on the server. They are not finished or independently verified yet, so we do not claim them as working today.',
+    q: 'How are our school’s records kept private?',
+    a: 'Each school’s data is kept separate: every request is tied to the signed-in school, and our tests try to open one school’s records from another and must fail. Permissions are checked on the server by role (owner, administrator, accountant, front office, teacher), and important changes are written to an audit trail. This has not had an independent security audit yet.',
   },
   {
     q: 'How much will it cost?',
-    a: "Pricing hasn't been announced yet.",
+    a: 'Pricing has not been announced. Ask us before you commit and we will tell you plainly what applies to your school.',
   },
 ];
 
