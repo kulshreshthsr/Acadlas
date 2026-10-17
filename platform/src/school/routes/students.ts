@@ -21,6 +21,7 @@ import {
 } from '../../db/school-schema';
 import { todayIST } from '../../lib/dates';
 import { conflict, email, forbidden, invalid, isoDate, notFound, optionalText, parse, phone, readBody, readQuery, requiredText } from '../../lib/http';
+import { endAccess, signOutIfNoAccessLeft } from '../../parent/access';
 import { studentCharges, syncStudentCharges } from '../fees-engine';
 import { assertCanViewStudent, findCurrentYear, getSection, getStudent, ownSectionIds, resolveYear } from '../queries';
 import { audit, can, nextNumber, requirePermission } from '../tenant';
@@ -623,8 +624,12 @@ studentRoutes.patch('/guardians/:id', async (c) => {
   const body = await readBody(c, guardianFields.partial());
   const [before] = await db.select().from(guardian).where(and(eq(guardian.schoolId, t.schoolId), eq(guardian.id, id)));
   if (!before) throw notFound('That guardian');
-  await db.transaction(async (tx) => {
+  const phoneChanged = body.phone !== undefined && body.phone !== before.phone;
+  const ended = await db.transaction(async (tx) => {
     await tx.update(guardian).set(body).where(and(eq(guardian.schoolId, t.schoolId), eq(guardian.id, id)));
+    // The parent app login is the old number. Whoever has that number now must not keep
+    // seeing this family: access ends, and the school sends a new link to the new number.
+    const access = phoneChanged ? await endAccess(tx, t.schoolId, id, t.userName) : { ended: false, userId: null };
     // The change shows on every child of this guardian — that is the point of one record.
     const kids = await tx.select({ studentId: studentGuardian.studentId }).from(studentGuardian).where(eq(studentGuardian.guardianId, id));
     for (const k of kids) {
@@ -637,8 +642,18 @@ studentRoutes.patch('/guardians/:id', async (c) => {
         data: { before: { phone: before.phone, email: before.email }, after: { phone: body.phone, email: body.email } },
       });
     }
+    if (access.ended) {
+      await audit(tx, t, {
+        action: 'parents.revoked',
+        entityType: 'guardian',
+        entityId: id,
+        summary: `Ended ${before.name}'s parent app access because their phone number changed`,
+      });
+    }
+    return access;
   });
-  return c.json({ ok: true });
+  await signOutIfNoAccessLeft(db, c.get('auth'), ended.userId);
+  return c.json({ ok: true, parentAccessEnded: ended.ended });
 });
 
 studentRoutes.post('/students/:id/guardians/:guardianId/primary', async (c) => {

@@ -20,6 +20,11 @@ import { coreRoutes } from './school/routes/core';
 import { feeRoutes } from './school/routes/fees';
 import { reportRoutes } from './school/routes/reports';
 import { invitationInfoRoutes, staffRoutes } from './school/routes/staff';
+import { parentRoutes } from './school/routes/parents';
+import { activationRoutes } from './parent/activation';
+import { parentApiRoutes } from './parent/routes';
+import { user } from './db/auth-schema';
+import { eq } from 'drizzle-orm';
 import { structureRoutes } from './school/routes/structure';
 import { studentRoutes } from './school/routes/students';
 import { tenantGate } from './school/tenant';
@@ -62,9 +67,13 @@ function tooMany(c: Context, retryAfter: number, message = 'Too many requests. W
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+
 export function createApp({ db, auth, origins, proxySecret }: AppOptions) {
   const app = new Hono<AppEnv>();
   const limiter = new RateLimiter();
+  // A real password hash, made once, to check against when an account does not exist.
+  let timingHash: Promise<string> | null = null;
+  const hashForTiming = () => (timingHash ??= auth.$context.then((ctx) => ctx.password.hash(crypto.randomUUID())));
   const allowedOrigins = new Set(origins);
 
   // Cross-origin resource policy stays off: the browser app is on another origin and reads
@@ -114,35 +123,49 @@ export function createApp({ db, auth, origins, proxySecret }: AppOptions) {
   // Better Auth limits sign-in attempts per address. On top of that, wrong passwords are
   // counted per account, so guessing one person's password is just as slow from a thousand
   // addresses as from one. The same message is returned whether or not the account exists.
-  app.post('/api/auth/sign-in/email', async (c) => {
-    const email = await c.req.raw
+  // Staff sign in by email; parents by phone number (src/parent/).
+  const guardedSignIn = (field: 'email' | 'phoneNumber') => async (c: Context<AppEnv>) => {
+    const account = await c.req.raw
       .clone()
       .json()
       .then((b: unknown) => {
-        const value = (b as { email?: unknown } | null)?.email;
-        const email = typeof value === 'string' ? value.trim().toLowerCase() : '';
-        return email.length <= MAX_EMAIL ? email : '';
+        const value = (b as Record<string, unknown> | null)?.[field];
+        const id = typeof value === 'string' ? value.trim().toLowerCase() : '';
+        return id.length <= MAX_EMAIL ? id : '';
       })
       .catch(() => '');
-    const pairKey = `signin:${addressBucket(c.get('clientIp'))}:${email}`;
-    const accountKey = `signin:${email}`;
+    const pairKey = `signin:${addressBucket(c.get('clientIp'))}:${account}`;
+    const accountKey = `signin:${account}`;
     const paused = [
       limiter.blocked(pairKey, LIMITS.signInFailuresFromAddress.max),
       limiter.blocked(accountKey, LIMITS.signInFailuresForAccount.max),
     ].find((b) => b.blocked);
-    if (email && paused) {
-      return tooMany(c, paused.retryAfter, 'Too many wrong passwords for this account. Wait a while, or reset the password.');
+    if (account && paused) {
+      return tooMany(c, paused.retryAfter, 'Too many wrong passwords for this account. Wait a while, or ask for a new password.');
     }
 
+    // Better Auth answers an unknown phone number at once but a wrong password only after
+    // checking it — the difference in time would tell anyone which numbers have accounts.
+    // An unknown number is made to take as long.
+    const known =
+      field !== 'phoneNumber' || !account
+        ? true
+        : Boolean((await db.select({ id: user.id }).from(user).where(eq(user.phoneNumber, account)).limit(1))[0]);
     const res = await auth.handler(c.req.raw);
-    if (email && res.status === 401) {
+    if (!known) {
+      const ctx = await auth.$context;
+      await ctx.password.verify({ hash: await hashForTiming(), password: 'not-a-real-password' });
+    }
+    if (account && res.status === 401) {
       limiter.record(pairKey, LIMITS.signInFailuresFromAddress.windowMs);
       limiter.record(accountKey, LIMITS.signInFailuresForAccount.windowMs);
-    } else if (email && res.ok) {
+    } else if (account && res.ok) {
       limiter.clear(pairKey);
     }
     return res;
-  });
+  };
+  app.post('/api/auth/sign-in/email', guardedSignIn('email'));
+  app.post('/api/auth/sign-in/phone-number', guardedSignIn('phoneNumber'));
 
   // Every Better Auth endpoint lives under this one path.
   app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
@@ -153,6 +176,14 @@ export function createApp({ db, auth, origins, proxySecret }: AppOptions) {
     await next();
   });
   app.route('/api', invitationInfoRoutes);
+
+  // Opening a parent's invitation link: no sign-in, so the same tight limit per address. The
+  // link itself also dies after five wrong answers (src/parent/activation.ts).
+  app.use('/api/parent-invite/*', async (c, next) => {
+    const { ok, retryAfter } = limiter.hit(`lookup:${addressBucket(c.get('clientIp'))}`, LIMITS.publicLookup.max, LIMITS.publicLookup.windowMs);
+    if (!ok) return tooMany(c, retryAfter);
+    await next();
+  });
 
   // A change must come from a page of ours. The session cookie is SameSite=Lax and CORS
   // already blocks other sites from reading answers; this refuses the write itself.
@@ -183,7 +214,17 @@ export function createApp({ db, auth, origins, proxySecret }: AppOptions) {
   school.route('/', feeRoutes);
   school.route('/', staffRoutes);
   school.route('/', reportRoutes);
+  school.route('/', parentRoutes);
   app.route('/api/school', school);
+
+  // The parent app's own API, walled off from the school's: parents are not members of the
+  // school, and this gate (src/parent/routes.ts) knows only their own children.
+  app.use('/api/parent-invite/*', sameOriginWrites);
+  app.route('/api', activationRoutes);
+  const parents = new Hono<AppEnv>();
+  parents.use('*', sameOriginWrites);
+  parents.route('/', parentApiRoutes as unknown as Hono<AppEnv>);
+  app.route('/api/parent', parents);
 
   app.get('/health', (c) => c.json({ ok: true }));
 

@@ -44,6 +44,7 @@ export const permissions = [
   'reports.fees',
   'reports.academic',
   'audit.view',
+  'parents.manage', // invite guardians to the parent app, revoke their access
 ] as const;
 
 export type Permission = (typeof permissions)[number];
@@ -60,6 +61,7 @@ const matrix: Record<SchoolRole, Permission[]> = {
     'fees.view',
     'fees.collect',
     'reports.academic',
+    'parents.manage',
   ],
   teacher: ['students.view.own', 'attendance.mark.own', 'attendance.view', 'reports.academic'],
   member: ['students.view.own', 'attendance.view'],

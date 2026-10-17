@@ -12,7 +12,8 @@
 // so the server, the local mode and the tests can each hand it the database they use.
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
+import { APIError } from 'better-auth/api';
+import { organization, phoneNumber } from 'better-auth/plugins';
 import { and, eq, isNull } from 'drizzle-orm';
 import { schema } from './db';
 import type { Db } from './db';
@@ -87,6 +88,7 @@ export function createAuth({ db, secret, baseURL, trustedOrigins }: AuthOptions)
         '/sign-up/email': { window: 60 * 60, max: 50 },
         '/organization/create': { window: 60 * 60, max: 5 },
         '/organization/invite-member': { window: 60 * 60, max: 100 },
+        '/sign-in/phone-number': { window: 60, max: 20 },
       },
     },
 
@@ -94,11 +96,54 @@ export function createAuth({ db, secret, baseURL, trustedOrigins }: AuthOptions)
       ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
 
+    // Phone sign-in exists for parents, whose number is set once by the server when they use
+    // the link their school sent (src/school/parent-access.ts). Until an SMS provider is
+    // set up, every code-by-SMS route is switched off, so none can be used to send messages
+    // or to attach a number to an account.
+    disabledPaths: [
+      '/phone-number/send-otp',
+      '/phone-number/verify',
+      '/phone-number/request-password-reset',
+      '/phone-number/reset-password',
+    ],
+
+    databaseHooks: {
+      // A phone number is a parent's login. Nobody may give one to an account through a web
+      // request — at sign-up or by editing their profile — or they could claim a parent's
+      // number before the school invites them. Only server code outside any auth route
+      // (the parent activation) sets it; there the endpoint context is null.
+      user: {
+        create: {
+          async before(data, context) {
+            if (context && (data.phoneNumber != null || data.phoneNumberVerified != null)) {
+              throw new APIError('BAD_REQUEST', { message: 'A phone number cannot be set here.' });
+            }
+          },
+        },
+        update: {
+          async before(data, context) {
+            if (context && ('phoneNumber' in data || 'phoneNumberVerified' in data)) {
+              throw new APIError('BAD_REQUEST', { message: 'A phone number cannot be changed here.' });
+            }
+          },
+        },
+      },
+    },
+
     plugins: [
+      phoneNumber({
+        // Indian mobile numbers only, always stored as +91 and ten digits.
+        phoneNumberValidator: (value) => /^\+91[6-9]\d{9}$/.test(value),
+        sendOTP() {
+          throw new APIError('NOT_FOUND', { message: 'Codes by SMS are not available yet.' });
+        },
+      }),
       organization({
         creatorRole: 'owner',
         // Enough for a group of schools under one person; stops one account minting hundreds.
         organizationLimit: 20,
+        // Parent logins (the only ones with a phone number) never run a school.
+        allowUserToCreateOrganization: (u) => !(u as { phoneNumber?: string | null }).phoneNumber,
         ac,
         roles: authRoles,
         // School staff do not check email hourly; a week is a kinder window than 48 hours.

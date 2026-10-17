@@ -647,6 +647,75 @@ export const auditEvent = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Parents
+// ---------------------------------------------------------------------------
+
+/**
+ * What a school lets parents see. One row per school, created the first time an
+ * administrator opens the panel. Off until they turn it on. The parent API reads only the
+ * sections switched on here — a section that is off is never queried, not merely hidden.
+ */
+export const parentPortal = pgTable('parent_portal', {
+  schoolId: text('school_id')
+    .primaryKey()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  enabled: boolean('enabled').default(false).notNull(),
+  /** 'daily' shows each day's mark; 'summary' only the month's percentage. */
+  attendance: text('attendance', { enum: ['off', 'summary', 'daily'] }).default('daily').notNull(),
+  /** What is due and when, what has been paid, what is left. */
+  fees: boolean('fees').default(true).notNull(),
+  /** 'list' shows receipts in a list; 'full' also opens each one to view and print. */
+  receipts: text('receipts', { enum: ['off', 'list', 'full'] }).default('full').notNull(),
+  /** Date of birth, blood group and address. */
+  studentDetails: boolean('student_details').default(false).notNull(),
+  classTeacher: boolean('class_teacher').default(true).notNull(),
+  updatedByName: text('updated_by_name'),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * A guardian's way into the parent app, one per guardian. Starts 'invited' with a one-time
+ * link; becomes 'active' once the parent proves they know the child's date of birth and sets
+ * a password; 'revoked' shuts it at once.
+ *
+ * The link's secret is never stored, only its SHA-256, so a copy of this table cannot be
+ * used to take over anyone's access. A new link replaces the old one.
+ */
+export const parentAccess = pgTable(
+  'parent_access',
+  {
+    id: id(),
+    schoolId: schoolId(),
+    guardianId: text('guardian_id')
+      .notNull()
+      .references(() => guardian.id, { onDelete: 'cascade' }),
+    /** The parent's login, once the link has been used. */
+    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+    /** The number the link was issued for, as +91 and ten digits. It becomes the login. */
+    phone: text('phone').notNull(),
+    status: text('status', { enum: ['invited', 'active', 'revoked'] }).default('invited').notNull(),
+    tokenHash: text('token_hash'),
+    tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
+    /** Wrong dates of birth entered against the current link. The link stops working at the limit. */
+    tokenAttempts: smallint('token_attempts').default(0).notNull(),
+    invitedByName: text('invited_by_name'),
+    invitedAt: timestamp('invited_at', { withTimezone: true }),
+    activatedAt: timestamp('activated_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    revokedByName: text('revoked_by_name'),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('parent_access_guardian_uq').on(t.guardianId),
+    uniqueIndex('parent_access_token_uq').on(t.tokenHash).where(sql`${t.tokenHash} is not null`),
+    index('parent_access_user_idx').on(t.userId),
+    index('parent_access_school_idx').on(t.schoolId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Relations (for db.query)
 // ---------------------------------------------------------------------------
 
