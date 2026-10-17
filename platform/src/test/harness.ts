@@ -1,16 +1,21 @@
 // Test harness: a fresh in-memory Postgres per suite, the real app on top of it, and a
 // small client that signs people up and carries their cookies like a browser would.
 import { createApp } from '../app';
+import { PROXY_IP_HEADER, PROXY_KEY_HEADER } from '../lib/client-ip';
 import { createAuth } from '../auth';
 import { openLocalDatabase } from '../db';
 import type { Db } from '../db';
 
-const ORIGIN = 'http://localhost:5173';
+export const ORIGIN = 'http://localhost:5173';
+// Tests run the production path: every request comes "through the proxy" with this secret,
+// and each Client has an address of its own, as separate browsers would.
+export const PROXY_SECRET = 'test-proxy-secret-test-proxy-secret-0123';
+let nextAddress = 1;
 
 export async function startTestApp() {
   const db = await openLocalDatabase();
   const auth = createAuth({ db, secret: 'test-secret-test-secret-test-secret-123', baseURL: 'http://localhost:8787', trustedOrigins: [ORIGIN] });
-  const app = createApp({ db, auth, origins: [ORIGIN] });
+  const app = createApp({ db, auth, origins: [ORIGIN], proxySecret: PROXY_SECRET });
   return { db, auth, app };
 }
 
@@ -18,12 +23,22 @@ type App = Awaited<ReturnType<typeof startTestApp>>['app'];
 
 export class Client {
   private cookies = new Map<string, string>();
-  constructor(private app: App) {}
+  /** This client's address; tests may change it to act as another connection. */
+  ip: string;
+  constructor(private app: App) {
+    const n = nextAddress++;
+    this.ip = `10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`;
+  }
 
-  async request(method: string, path: string, body?: unknown) {
-    const headers: Record<string, string> = { Origin: ORIGIN };
+  /** `override` replaces or (with undefined) removes headers — for tests that impersonate a hostile page. */
+  async request(method: string, path: string, body?: unknown, override: Record<string, string | undefined> = {}) {
+    const headers: Record<string, string> = { Origin: ORIGIN, [PROXY_KEY_HEADER]: PROXY_SECRET, [PROXY_IP_HEADER]: this.ip };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (this.cookies.size) headers.Cookie = [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ');
+    for (const [name, value] of Object.entries(override)) {
+      if (value === undefined) delete headers[name];
+      else headers[name] = value;
+    }
     const res = await this.app.request(`http://localhost:8787${path}`, {
       method,
       headers,

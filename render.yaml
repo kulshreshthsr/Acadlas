@@ -5,12 +5,14 @@ services:
     runtime: node
     plan: free
     rootDir: platform
-    buildCommand: npm ci
+    buildCommand: npm ci --include=dev   # tsx and @hono/node-server run the app; NODE_ENV=production would skip them
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 22
+      - key: NODE_ENV            # production: the API refuses to start without PROXY_SHARED_SECRET
+        value: production
       - key: DATABASE_URL        # Neon connection string
         sync: false
       - key: BETTER_AUTH_SECRET  # a new long random string, not the local one
@@ -20,4 +22,6 @@ services:
       - key: CORS_ORIGINS        # same address as BETTER_AUTH_URL
         sync: false
       - key: APP_URL             # same address again, for links in emails
+        sync: false
+      - key: PROXY_SHARED_SECRET # 32+ random characters; set the SAME value on the Cloudflare Pages project
         sync: false

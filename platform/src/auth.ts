@@ -17,6 +17,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { schema } from './db';
 import type { Db } from './db';
 import { schoolProfile, staff } from './db/school-schema';
+import { CLIENT_IP_HEADER } from './lib/client-ip';
 import { appUrl, sendMail } from './lib/mailer';
 import { ac, authRoles, roleLabels } from './school/roles';
 import type { SchoolRole } from './school/roles';
@@ -69,9 +70,35 @@ export function createAuth({ db, secret, baseURL, trustedOrigins }: AuthOptions)
       cookieCache: { enabled: true, maxAge: 5 * 60 },
     },
 
+    // On always, not only when NODE_ENV says production: a host that forgets to set it must
+    // not quietly lose the limit on password guessing. Keyed on the one address app.ts
+    // decided on (src/lib/client-ip.ts); app.ts also counts wrong passwords per account.
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 300,
+      customRules: {
+        // Better Auth's default is 3 sign-ins per 10 s per address — a whole school's staff
+        // arriving at 8 am on one connection would trip that. Guessing one account's password
+        // is limited per account in app.ts, so the per-address limit can be roomier.
+        '/sign-in/email': { window: 60, max: 20 },
+        // Better Auth's own default (3 a minute) for password reset still applies.
+        // A staff training day can see a whole school's teachers sign up from one connection.
+        '/sign-up/email': { window: 60 * 60, max: 50 },
+        '/organization/create': { window: 60 * 60, max: 5 },
+        '/organization/invite-member': { window: 60 * 60, max: 100 },
+      },
+    },
+
+    advanced: {
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
+    },
+
     plugins: [
       organization({
         creatorRole: 'owner',
+        // Enough for a group of schools under one person; stops one account minting hundreds.
+        organizationLimit: 20,
         ac,
         roles: authRoles,
         // School staff do not check email hourly; a week is a kinder window than 48 hours.

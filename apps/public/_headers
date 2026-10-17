@@ -1,0 +1,25 @@
+# Cloudflare Pages response headers for every page and file of the app.
+# (Responses from functions/api are the API's own and carry its headers instead.)
+#
+# The app loads nothing from anywhere else: scripts, styles and fonts are all built into
+# /assets, and the API is reached on this same address through functions/api. So the
+# policy can say "this site only", and an injected <script> or a page that frames ours to
+# trick a click has nowhere to go.
+#
+# Referrer-Policy: invitation links carry their secret in the address. same-origin keeps
+# that address from being sent to WhatsApp or any other site the person goes to next.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+
+# index.html must never be cached, so a fix to it reaches everyone on their next visit.
+/index.html
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

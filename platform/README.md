@@ -78,6 +78,29 @@ attempt must come back 404.
 They are Better Auth organization roles (so an invitation carries the role), mapped to
 permissions in `src/school/roles.ts`, and checked on the server on every route.
 
+## The outer defences
+
+Every `/api` request passes these before any route runs (`src/app.ts`); `npm test` includes a
+suite (`src/test/security.test.ts`) that attacks each one.
+
+- **Only through the app's proxy.** In production the browser calls the app's own address and a
+  Cloudflare Pages Function forwards to this API with `PROXY_SHARED_SECRET`. Requests without it
+  get 403, and with `NODE_ENV=production` the server refuses to start unless it is set. The same
+  value must be set on the Pages project.
+- **One trusted client address.** Taken from the proxy (Cloudflare's `cf-connecting-ip`), never from
+  a header the caller wrote (`src/lib/client-ip.ts`). Every rate limit keys on it; an IPv6 /64
+  counts as one caller.
+- **Rate limits.** Better Auth's limiter is always on (sign-in 20 a minute per address, sign-up 50
+  an hour, school creation 5 an hour). On top: wrong passwords are counted per account — 10 per 15
+  minutes from one address, 50 an hour from anywhere — so guessing one password is slow however
+  many addresses are used. Plus a ceiling per address and per signed-in person.
+- **Writes only from our pages.** `POST`/`PUT`/`PATCH`/`DELETE` under `/api/school` need an
+  `Origin` from `CORS_ORIGINS`.
+- **Small bodies.** 256 KB, or 4 MB for a student import.
+
+The rate limits live in memory, which is right for one API process. Run more than one and they
+must move to shared storage, or each process allows the full limit on its own.
+
 ## Commands
 
 | Command                 | Action                                                         |
@@ -103,3 +126,6 @@ invitation link to copy or send on WhatsApp.
 - **Online fee payment** (Razorpay, Cashfree) — needs each school's merchant account.
 - **Parent and student logins, exams and report cards, timetable, transport** — later products
   and modules on this same platform.
+- **Email verification** is off until Resend is configured, so an account's email is not yet
+  proven to belong to its owner, and sign-up says when an email already has an account. Turn
+  on `requireEmailVerification` in `src/auth.ts` once mail is sent for real.

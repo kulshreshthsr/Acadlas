@@ -37,6 +37,8 @@ export type AppEnv = {
     db: Db;
     auth: Auth;
     tenant: Tenant;
+    /** The caller's address as decided in app.ts (src/lib/client-ip.ts); null if unknown. */
+    clientIp: string | null;
   };
 };
 

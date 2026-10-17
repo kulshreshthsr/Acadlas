@@ -22,7 +22,16 @@ const auth = createAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: origins,
 });
-const app = createApp({ db, auth, origins });
+// In production the API only answers requests forwarded by the app's own proxy, which is
+// also the only trustworthy source of a caller's address (see src/lib/client-ip.ts).
+// Refusing to start without it beats running with rate limits anyone can sidestep.
+const proxySecret = process.env.PROXY_SHARED_SECRET || undefined;
+if (process.env.NODE_ENV === 'production' && (!proxySecret || proxySecret.length < 32)) {
+  console.error('PROXY_SHARED_SECRET must be set to a random string of at least 32 characters in production.');
+  process.exit(1);
+}
+
+const app = createApp({ db, auth, origins, proxySecret });
 
 const port = Number(process.env.PORT ?? 8787);
 
