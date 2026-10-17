@@ -14,6 +14,8 @@ import { sectionOptions, useStructure } from '../../lib/queries';
 import { useSchool } from '../../lib/school';
 import { Field } from '../../components/Field';
 import { FormError } from '../../components/FormError';
+import { ParentAccessRow, ParentAppOffNotice } from '../../components/ParentAccess';
+import { useParentAccess } from '../../lib/parent-access';
 import { Icon } from '../../components/Icon';
 import type { IconName } from '../../lib/icons';
 import { Avatar, BackLink, Card, CheckRow, Dialog, ErrorState, Loading, Notice, Page, Seg, SelectField, Spinner, TextAreaField } from '../../components/ui';
@@ -72,6 +74,7 @@ export function StudentRecord() {
   const school = useSchool();
   const record = useQuery({ queryKey: ['student', id], queryFn: () => api.get<StudentData>(`/school/students/${id}`) });
   const [dialog, setDialog] = useState<null | 'edit' | 'move' | 'leave' | 'consent' | 'guardian-add' | { guardian: Guardian }>(null);
+  const parentAccess = useParentAccess(id);
 
   if (record.isPending) {
     return (
@@ -174,6 +177,7 @@ export function StudentRecord() {
           </Card>
 
           <Card id="family" title="Family" pad={false} action={d.can.edit && <button type="button" className="btn btn-quiet btn-sm" onClick={() => setDialog('guardian-add')}><Icon name="plus" size={14} /> Add</button>}>
+            {!left && <ParentAppOffNotice data={parentAccess.data} />}
             <ul className="divide-y divide-slate-100">
               {d.guardians.map((g) => (
                 <li key={g.id} className="px-4 py-3.5 sm:px-5">
@@ -206,6 +210,7 @@ export function StudentRecord() {
                       </a>
                     </div>
                   )}
+                  {!left && <ParentAccessRow studentId={s.id} childName={s.firstName} guardianId={g.id} data={parentAccess.data} />}
                 </li>
               ))}
             </ul>
@@ -518,6 +523,7 @@ function useRecordMutation<T>(studentId: string, fn: (body: T) => Promise<unknow
     mutationFn: fn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', studentId] });
+      queryClient.invalidateQueries({ queryKey: ['parent-access', studentId] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['today'] });
       toast(done);

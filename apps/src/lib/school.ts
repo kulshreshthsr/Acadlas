@@ -19,7 +19,8 @@ export type Permission =
   | 'fees.manage'
   | 'reports.fees'
   | 'reports.academic'
-  | 'audit.view';
+  | 'audit.view'
+  | 'parents.manage';
 
 export type AcademicYear = {
   id: string;

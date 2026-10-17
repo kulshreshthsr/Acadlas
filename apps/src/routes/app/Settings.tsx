@@ -1,5 +1,5 @@
-// Settings: the school's details, academic years and terms, holidays, fee heads, and the
-// full activity trail of who changed what.
+// Settings: the school's details, academic years and terms, holidays, fee heads, the parent
+// app, and the full activity trail of who changed what.
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,12 +13,14 @@ import { FormError } from '../../components/FormError';
 import { Icon } from '../../components/Icon';
 import { Card, Dialog, EmptyState, ErrorState, Loading, Page, SelectField, Spinner, TextAreaField } from '../../components/ui';
 import { useToast } from '../../lib/toast';
+import { ParentAppSettings } from './ParentAppSettings';
 
 const tabs = [
   { id: 'school', label: 'School' },
   { id: 'years', label: 'Years and terms' },
   { id: 'holidays', label: 'Holidays' },
   { id: 'fees', label: 'Fee heads' },
+  { id: 'parents', label: 'Parent app' },
   { id: 'activity', label: 'Activity' },
 ] as const;
 type Tab = (typeof tabs)[number]['id'];
@@ -47,6 +49,7 @@ export function Settings() {
       {tab === 'years' && <Years />}
       {tab === 'holidays' && <Holidays />}
       {tab === 'fees' && <FeeHeads />}
+      {tab === 'parents' && <ParentAppSettings />}
       {tab === 'activity' && <Activity />}
     </Page>
   );
