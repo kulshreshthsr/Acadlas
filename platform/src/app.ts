@@ -80,6 +80,13 @@ export function createApp({ db, auth, origins, proxySecret }: AppOptions) {
   // these responses through CORS, which the policy would otherwise block.
   app.use('*', secureHeaders({ crossOriginResourcePolicy: false }));
 
+  // Nothing the API says may be kept by a browser or anything between: school records are
+  // read on shared family phones and office computers, and must not outlive the session.
+  app.use('/api/*', async (c, next) => {
+    await next();
+    c.res.headers.set('Cache-Control', 'no-store');
+  });
+
   // First, so that even a refusal below carries the headers a browser needs to read it.
   app.use(
     '/api/*',

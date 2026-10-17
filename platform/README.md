@@ -75,6 +75,28 @@ attempt must come back 404.
 | Teacher        | Registers and student records for the sections they are class teacher of,  |
 |                | or teach a subject to. Can change only today's register.                     |
 
+Owner, Administrator and Front office may also invite parents to the parent app (`parents.manage`).
+
+## Parents
+
+Parents are **not** members of the school — that would let them list its staff. They have their
+own table (`parent_access`, one row per guardian), their own API (`/api/parent/*`, in
+`src/parent/`) and a gate of its own that re-reads the session and their access on every
+request.
+
+- Staff invite a guardian from the student's record. The link is `<app>/parent/welcome#<secret>`;
+  only the secret's SHA-256 is stored. The parent confirms the child's date of birth (five wrong
+  answers kill the link) and sets a password. Their login is then phone number + password.
+- A number that is already a parent elsewhere links only with that account's password. A link
+  sent to an active parent resets their password and signs out every device.
+- Phone numbers are set only by the activation code: a database hook in `src/auth.ts` refuses
+  any web request that tries to set one, and the SMS routes are off until a provider exists.
+- Settings → Parent app decides what parents see (off by default). A section switched off is
+  refused by the API, not hidden by the screen. Revoking access, or changing a guardian's phone
+  number, ends it at once.
+- `src/test/parents.test.ts` attacks all of it: other families, other schools, leaked links,
+  number takeover, cross-site use, leaks of internal fields.
+
 They are Better Auth organization roles (so an invitation carries the role), mapped to
 permissions in `src/school/roles.ts`, and checked on the server on every route.
 
@@ -124,8 +146,10 @@ invitation link to copy or send on WhatsApp.
   needs a Workers entry file and either the paid plan or a lighter password hash — the free plan's
   10 ms CPU limit is too short for Better Auth's default password hashing.
 - **Online fee payment** (Razorpay, Cashfree) — needs each school's merchant account.
-- **Parent and student logins, exams and report cards, timetable, transport** — later products
-  and modules on this same platform.
+- **Student logins, exams and report cards, timetable, transport** — later products and modules
+  on this same platform.
+- **Codes by SMS** for parents (first sign-in and password reset) — needs an SMS provider with DLT
+  registration. Until then the school's link does both.
 - **Email verification** is off until Resend is configured, so an account's email is not yet
   proven to belong to its owner, and sign-up says when an email already has an account. Turn
   on `requireEmailVerification` in `src/auth.ts` once mail is sent for real.

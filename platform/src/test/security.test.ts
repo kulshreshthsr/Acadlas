@@ -189,6 +189,17 @@ describe('writes must come from the app', () => {
   });
 });
 
+describe('nothing is kept by the browser', () => {
+  test('every API answer, including a refusal, says no-store', async () => {
+    const ok = await A.owner.request('GET', '/api/school/me');
+    assert.equal(ok.status, 200);
+    const page = await ctx.app.request('http://localhost:8787/api/school/me', { headers: { ...viaProxy('10.9.9.9') } });
+    assert.equal(page.headers.get('cache-control'), 'no-store');
+    const session = await ctx.app.request('http://localhost:8787/api/auth/get-session', { headers: { ...viaProxy('10.9.9.9') } });
+    assert.equal(session.headers.get('cache-control'), 'no-store');
+  });
+});
+
 describe('oversized requests', () => {
   test('a huge body is refused before it is read', async () => {
     const res = await A.owner.post('/api/school/holidays', { holidays: [{ date: '2026-08-16', name: 'x'.repeat(300 * 1024) }] });

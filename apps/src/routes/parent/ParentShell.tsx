@@ -16,6 +16,7 @@ import { PasswordField } from '../../components/PasswordField';
 import { Wordmark } from '../../components/Wordmark';
 import { Avatar, Dialog, ErrorState, Loading, Spinner } from '../../components/ui';
 import { useToast } from '../../lib/toast';
+import { InstallHint } from './InstallHint';
 
 async function leave(clear: () => void) {
   await signOut();
@@ -97,7 +98,10 @@ export function ParentShell() {
             <ErrorState error={me.error} retry={() => me.refetch()} />
           </div>
         ) : (
-          <Outlet />
+          <>
+            <InstallHint />
+            <Outlet />
+          </>
         )}
       </main>
     </div>

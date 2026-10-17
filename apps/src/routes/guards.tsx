@@ -25,12 +25,31 @@ export function Checking({ label }: { label: string }) {
   );
 }
 
+/** The connection or the API is down. Nothing is assumed about who is signed in. */
+function CannotReach({ retry }: { retry: () => void }) {
+  return (
+    <div data-surface="dark" className="grid min-h-svh place-items-center bg-night px-6">
+      <div className="rise flex max-w-xs flex-col items-center gap-3 text-center">
+        <Wordmark tone="light" className="h-6" />
+        <h1 className="mt-3 text-[1.375rem] text-white">Can’t reach Acadlas</h1>
+        <p className="text-[0.9375rem] text-slate-400">Check your internet connection, then try again.</p>
+        <button type="button" className="btn btn-sun mt-2" onClick={retry}>
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Wraps screens that need a signed-in member of school staff. */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error, refetch } = useSession();
   const location = useLocation();
 
   if (isPending) return <Checking label="Checking your session" />;
+  // No answer at all is not the same as "signed out": say so, rather than sending a
+  // signed-in parent or teacher to the sign-in page because their signal dropped.
+  if (!session && error) return <CannotReach retry={() => refetch()} />;
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (isParentSession(session)) return <Navigate to="/parent" replace />;
 
@@ -39,9 +58,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 /** Wraps sign-in and sign-up, so a signed-in person is not shown them again. */
 export function RequireGuest({ children }: { children: ReactNode }) {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error, refetch } = useSession();
 
   if (isPending) return <Checking label="Checking your session" />;
+  // No answer at all is not the same as "signed out": say so, rather than sending a
+  // signed-in parent or teacher to the sign-in page because their signal dropped.
+  if (!session && error) return <CannotReach retry={() => refetch()} />;
   if (session) return <Navigate to="/" replace />;
 
   return <>{children}</>;
@@ -49,9 +71,12 @@ export function RequireGuest({ children }: { children: ReactNode }) {
 
 /** Wraps the parent app's screens. */
 export function RequireParent({ children }: { children: ReactNode }) {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error, refetch } = useSession();
 
   if (isPending) return <Checking label="Checking your session" />;
+  // No answer at all is not the same as "signed out": say so, rather than sending a
+  // signed-in parent or teacher to the sign-in page because their signal dropped.
+  if (!session && error) return <CannotReach retry={() => refetch()} />;
   if (!session) return <Navigate to="/parent/login" replace />;
   if (!isParentSession(session)) return <Navigate to="/" replace />;
 
@@ -60,9 +85,12 @@ export function RequireParent({ children }: { children: ReactNode }) {
 
 /** The "/" route: sends each person to whichever of the four states they are in. */
 export function RouteHome() {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error, refetch } = useSession();
 
   if (isPending) return <Checking label="Checking your session" />;
+  // No answer at all is not the same as "signed out": say so, rather than sending a
+  // signed-in parent or teacher to the sign-in page because their signal dropped.
+  if (!session && error) return <CannotReach retry={() => refetch()} />;
   if (!session) return <Navigate to="/login" replace />;
   if (isParentSession(session)) return <Navigate to="/parent" replace />;
 

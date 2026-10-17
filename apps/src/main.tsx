@@ -11,6 +11,9 @@ import './index.css';
 import { App } from './App';
 import { queryClient } from './lib/api';
 import { ToastProvider } from './components/ui';
+import { startInstallSupport } from './lib/install';
+
+startInstallSupport();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
