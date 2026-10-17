@@ -92,12 +92,20 @@ export function Login() {
         </div>
       </form>
 
-      <p className="mt-5 border-t border-slate-100 pt-4 text-[0.8125rem] text-slate-500">
-        New to Acadlas?{' '}
-        <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/signup">
-          Create an account
-        </Link>
-      </p>
+      <div className="mt-5 space-y-1.5 border-t border-slate-100 pt-4 text-[0.8125rem] text-slate-500">
+        <p>
+          New to Acadlas?{' '}
+          <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/signup">
+            Create an account
+          </Link>
+        </p>
+        <p>
+          A parent?{' '}
+          <Link className="font-semibold text-lagoon-600 underline-offset-2 hover:underline" to="/parent/login">
+            Sign in with your phone number
+          </Link>
+        </p>
+      </div>
     </AuthShell>
   );
 }

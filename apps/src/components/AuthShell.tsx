@@ -17,6 +17,8 @@ type AuthShellProps = {
   stage?: ReactNode;
   /** Shown on the right of the nav, e.g. a link to the other side of signup. */
   navAction: { prompt: string; label: string; to: string };
+  /** The strip of what Acadlas School covers. Parents get the screen without it. */
+  covers?: boolean;
 };
 
 const covers: { icon: IconName; label: string }[] = [
@@ -27,7 +29,7 @@ const covers: { icon: IconName; label: string }[] = [
   { icon: 'staff', label: 'Staff' },
 ];
 
-export function AuthShell({ children, stage, navAction }: AuthShellProps) {
+export function AuthShell({ children, stage, navAction, covers: showCovers = true }: AuthShellProps) {
   return (
     <div data-surface="dark" className="relative flex min-h-svh flex-col">
       <ContourField />
@@ -69,6 +71,7 @@ export function AuthShell({ children, stage, navAction }: AuthShellProps) {
       </main>
 
       {/* The same strip the website runs under its hero. */}
+      {showCovers && (
       <footer className="relative z-10 border-t border-white/10">
         <div className="wrap flex flex-wrap items-center justify-center gap-x-7 gap-y-2 py-4 text-[0.8125rem] text-slate-400 lg:justify-between">
           <span className="hidden font-medium text-slate-300 lg:inline">Acadlas School covers:</span>
@@ -80,6 +83,7 @@ export function AuthShell({ children, stage, navAction }: AuthShellProps) {
           ))}
         </div>
       </footer>
+      )}
     </div>
   );
 }

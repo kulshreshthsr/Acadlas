@@ -231,7 +231,7 @@ function ShellFrame() {
 }
 
 /** The school's contour map behind the masthead. Still, and unique to the school. */
-function Terrain({ seed }: { seed: number }) {
+export function Terrain({ seed }: { seed: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;

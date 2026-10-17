@@ -5,7 +5,7 @@
 // The organization plugin mirrors the backend's: a school is an organization, and
 // the session carries whichever school the person is currently working in.
 import { createAuthClient } from 'better-auth/react';
-import { organizationClient } from 'better-auth/client/plugins';
+import { organizationClient, phoneNumberClient } from 'better-auth/client/plugins';
 
 // Set VITE_API_URL when the API is not on localhost (a deployed Worker, a
 // teammate's machine). See .env.local.example. "same-origin" means the host serving this
@@ -15,7 +15,7 @@ const apiUrl = configured === 'same-origin' ? window.location.origin : configure
 
 export const authClient = createAuthClient({
   baseURL: apiUrl,
-  plugins: [organizationClient()],
+  plugins: [organizationClient(), phoneNumberClient()],
 });
 
 export const { signIn, signUp, signOut, useSession, organization } = authClient;
@@ -33,6 +33,9 @@ const friendlyMessages: Record<string, string> = {
   INVALID_TOKEN: 'This link has expired or was already used. Ask for a new one.',
   INVITATION_NOT_FOUND: 'This invitation no longer exists. Ask the school for a new one.',
   YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION: 'This invitation was sent to a different email address.',
+  INVALID_PHONE_NUMBER_OR_PASSWORD: 'That phone number and password do not match a parent account.',
+  INVALID_PHONE_NUMBER: 'Enter a 10-digit Indian mobile number.',
+  RATE_LIMITED: 'Too many tries. Wait a little and try again.',
 };
 
 type AuthError = {
@@ -55,6 +58,11 @@ export function describeAuthError(error: AuthError): string {
     return friendlyMessages[error.code];
   }
 
+  // Sign-in limits (the API's own, and Better Auth's) both answer 429.
+  if (error.status === 429) {
+    return 'Too many tries for now. Wait a few minutes and try again.';
+  }
+
   if (error.status === 0 || error.message === 'Failed to fetch') {
     return `Cannot reach the Acadlas API at ${apiUrl}. Start it with "npm run dev" in the platform folder.`;
   }
@@ -74,3 +82,18 @@ export function describeThrownError(thrown: unknown): string {
 }
 
 export { apiUrl };
+
+/**
+ * Parents sign in with a phone number; staff with an email. A session tells them apart by
+ * whether the account has a phone number (only parent accounts can — see the platform's
+ * src/parent/). Each side of the app sends the other kind of person to their own side.
+ */
+export function isParentSession(session: { user: unknown } | null | undefined): boolean {
+  return Boolean((session?.user as { phoneNumber?: string | null } | undefined)?.phoneNumber);
+}
+
+/** "98765 43210", "+91 98765-43210", "09876543210" → "+919876543210", or null if it is not a mobile number. */
+export function toLoginPhone(input: string): string | null {
+  const digits = input.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
+  return /^[6-9]\d{9}$/.test(digits) ? `+91${digits}` : null;
+}

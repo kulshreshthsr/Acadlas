@@ -349,7 +349,9 @@
     cursor: pointer; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
   }
   .seg button:hover, .seg a:hover { color: var(--color-ink-800); }
-  .seg [aria-pressed="true"], .seg [aria-current="page"], .seg [aria-selected="true"] { background: var(--color-ink-800); color: var(--color-white); }
+  /* :hover repeated so a selected choice keeps white text under the pointer (the hover rule above is more specific). */
+  .seg [aria-pressed="true"], .seg [aria-current="page"], .seg [aria-selected="true"],
+  .seg [aria-pressed="true"]:hover, .seg [aria-current="page"]:hover, .seg [aria-selected="true"]:hover { background: var(--color-ink-800); color: var(--color-white); }
 
   .avatar {
     display: grid; place-items: center; flex-shrink: 0;

@@ -1,12 +1,13 @@
 // Who is allowed where.
 //
-// There are three states a person can be in, and every entry into the app resolves
-// to one of them: signed out, signed in with no school yet, and signed in with a
-// school. Keeping that decision in one place is what stops a half-finished signup
-// from dropping someone on an empty app screen.
+// There are four states a person can be in, and every entry into the app resolves
+// to one of them: signed out, signed in with no school yet, signed in with a school,
+// and signed in as a parent. Keeping that decision in one place is what stops a
+// half-finished signup from dropping someone on an empty app screen, and a parent on a
+// staff screen (or the other way round).
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { authClient, useSession } from '../lib/auth-client';
+import { authClient, isParentSession, useSession } from '../lib/auth-client';
 import { Wordmark } from '../components/Wordmark';
 
 /** Shown only while the session is being checked, which is normally a few hundred milliseconds. */
@@ -24,13 +25,14 @@ export function Checking({ label }: { label: string }) {
   );
 }
 
-/** Wraps screens that need a signed-in person. */
+/** Wraps screens that need a signed-in member of school staff. */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
   const location = useLocation();
 
   if (isPending) return <Checking label="Checking your session" />;
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (isParentSession(session)) return <Navigate to="/parent" replace />;
 
   return <>{children}</>;
 }
@@ -45,12 +47,24 @@ export function RequireGuest({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** The "/" route: sends each person to whichever of the three states they are in. */
+/** Wraps the parent app's screens. */
+export function RequireParent({ children }: { children: ReactNode }) {
+  const { data: session, isPending } = useSession();
+
+  if (isPending) return <Checking label="Checking your session" />;
+  if (!session) return <Navigate to="/parent/login" replace />;
+  if (!isParentSession(session)) return <Navigate to="/" replace />;
+
+  return <>{children}</>;
+}
+
+/** The "/" route: sends each person to whichever of the four states they are in. */
 export function RouteHome() {
   const { data: session, isPending } = useSession();
 
   if (isPending) return <Checking label="Checking your session" />;
   if (!session) return <Navigate to="/login" replace />;
+  if (isParentSession(session)) return <Navigate to="/parent" replace />;
 
   return <RouteHomeSignedIn />;
 }

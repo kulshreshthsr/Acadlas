@@ -90,10 +90,10 @@ export function ParentAccessRow({
 
   return (
     <div className="mt-2.5 rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100 sm:ml-12">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className={`flex min-w-0 flex-1 items-center gap-1.5 text-[0.8125rem] font-semibold ${tone}`}>
+      <div className="space-y-2">
+        <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[0.8125rem] font-semibold ${tone}`}>
           <Icon name={a?.status === 'active' ? 'check' : 'phone'} size={14} className="shrink-0" />
-          <span className="min-w-0">{line}</span>
+          <span>{line}</span>
           {resetLink && <span className="tag tag-sun">Password link sent</span>}
         </p>
         <div className="flex flex-wrap gap-1.5">

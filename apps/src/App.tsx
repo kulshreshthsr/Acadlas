@@ -9,7 +9,7 @@ import { SignUp } from './routes/SignUp';
 import { CreateSchool } from './routes/CreateSchool';
 import { ForgotPassword, ResetPassword } from './routes/PasswordReset';
 import { Invite } from './routes/Invite';
-import { Checking, RequireAuth, RequireGuest, RouteHome } from './routes/guards';
+import { Checking, RequireAuth, RequireGuest, RequireParent, RouteHome } from './routes/guards';
 import { Wordmark } from './components/Wordmark';
 import { ContourField } from './components/ContourField';
 import { AppShell, RequirePermission } from './components/AppShell';
@@ -40,6 +40,14 @@ const Receipt = page(() => import('./routes/app/Receipt'), 'Receipt');
 const Staff = page(() => import('./routes/app/Staff'), 'Staff');
 const Reports = page(() => import('./routes/app/Reports'), 'Reports');
 const Settings = page(() => import('./routes/app/Settings'), 'Settings');
+
+// The parent app: its own screens, loaded only by parents.
+const ParentLogin = page(() => import('./routes/parent/ParentLogin'), 'ParentLogin');
+const ParentWelcome = page(() => import('./routes/parent/ParentWelcome'), 'ParentWelcome');
+const ParentShell = page(() => import('./routes/parent/ParentShell'), 'ParentShell');
+const ParentHome = page(() => import('./routes/parent/ParentHome'), 'ParentHome');
+const ParentChild = page(() => import('./routes/parent/ParentChild'), 'ParentChild');
+const ParentReceipt = page(() => import('./routes/parent/ParentReceipt'), 'ParentReceipt');
 
 export function App() {
   return (
@@ -86,6 +94,23 @@ export function App() {
         <Route path="settings" element={<Guard anyOf={['school.manage', 'audit.view', 'fees.manage']}><Lazy><Settings /></Lazy></Guard>} />
       </Route>
       <Route path="/app/setup" element={<RequireAuth><Lazy full><Setup /></Lazy></RequireAuth>} />
+
+      <Route path="/parent/login" element={<RequireGuest><Lazy full><ParentLogin /></Lazy></RequireGuest>} />
+      <Route path="/parent/welcome" element={<Lazy full><ParentWelcome /></Lazy>} />
+      <Route
+        path="/parent"
+        element={
+          <RequireParent>
+            <Lazy full>
+              <ParentShell />
+            </Lazy>
+          </RequireParent>
+        }
+      >
+        <Route index element={<Lazy><ParentHome /></Lazy>} />
+        <Route path="child/:id" element={<Lazy><ParentChild /></Lazy>} />
+        <Route path="receipts/:id" element={<Lazy><ParentReceipt /></Lazy>} />
+      </Route>
 
       <Route path="*" element={<NotFound />} />
     </Routes>
